@@ -1,3 +1,5 @@
+import json
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -38,3 +40,37 @@ def test_known_data_issues_are_found_in_the_real_data(tmp_path: Path) -> None:
     assert found["STORES_OPENING_DATE_IN_FUTURE"] == (0, 0, 1)
     assert found["ARTICLES_COST_ABOVE_RECOMMENDED_PRICE"] == (0, 0, 4)
     assert found["INVENTORY_STOCK_IMBALANCE"] == (0, 0, 28)
+
+
+def _revenue(output_dir: Path) -> pd.DataFrame:
+    return pd.read_csv(output_dir / "kpis" / "revenue_by_store.csv")
+
+
+def test_region_filter_keeps_only_that_regions_stores(tmp_path: Path) -> None:
+    run_pipeline(Settings(data_dir=DATA_DIR, output_dir=tmp_path, regions=("Marmara",)))
+
+    revenue = _revenue(tmp_path)
+    assert revenue["store_id"].tolist() == ["S-001", "S-005"]
+    assert round(revenue["revenue"].sum(), 2) == 17_198_488.99
+
+
+def test_date_range_keeps_only_sales_inside_it(tmp_path: Path) -> None:
+    day = date(2024, 3, 10)
+    run_pipeline(Settings(data_dir=DATA_DIR, output_dir=tmp_path, date_from=day, date_to=day))
+
+    assert round(_revenue(tmp_path)["revenue"].sum(), 2) == 2_395_207.43
+
+
+def test_run_manifest_records_settings_row_counts_and_input_hashes(tmp_path: Path) -> None:
+    run_pipeline(Settings(data_dir=DATA_DIR, output_dir=tmp_path, stores=("S-001",)))
+
+    manifest = json.loads((tmp_path / "run_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["settings"]["stores"] == ["S-001"]
+    assert manifest["row_counts"]["transactions"]["raw"] == 28_890
+    assert set(manifest["input_files"]) == {
+        "stores.csv",
+        "articles.csv",
+        "transactions.csv",
+        "inventory.csv",
+    }
+    assert all(len(f["sha256"]) == 64 for f in manifest["input_files"].values())

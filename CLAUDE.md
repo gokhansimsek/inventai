@@ -17,7 +17,7 @@ uv run pytest
 uv run ruff check . && uv run ruff format .
 uv run mypy src tests tools    # strict
 uv run pyright                 # Pylance engine; standard mode, same as the editor
-uv run retail-analytics run --help
+uv run retail-analytics run --help  # settings: config/default.yaml, flags override
 ```
 
 A change is done when all four checks pass. The pre-commit hook

@@ -1,0 +1,18 @@
+# Default settings for `retail-analytics run`. Command-line flags override these.
+# Paths are relative to the folder you run the command from.
+
+data_dir: data
+
+# Analysis selection. Empty means everything.
+stores: []        # e.g. [S-001, S-002]
+regions: []       # e.g. [Marmara]; values as in stores.csv, not North/South/...
+# date_from: 2024-03-01
+# date_to: 2024-03-31
+
+# Dates after this are impossible (future transactions, store openings).
+# Omit to use the day of the run.
+# as_of: 2026-09-17
+
+# A sale priced more than this fraction away from the article's recommended price
+# is flagged as a price outlier (0.5 = below 50% or above 150%).
+price_tolerance: 0.5

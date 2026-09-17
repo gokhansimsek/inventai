@@ -9,6 +9,7 @@ import pandas as pd
 
 from retail_analytics.config import Settings
 from retail_analytics.filters import filter_sales
+from retail_analytics.io.manifest import write_manifest
 from retail_analytics.io.readers import load_raw_tables
 from retail_analytics.kpis.revenue import revenue_by
 from retail_analytics.reporting.report import Report
@@ -40,10 +41,17 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
 
     Raises:
         InputDataError: If an input file is missing or structurally broken.
-        ConfigError: If a filter names an unknown store.
+        ConfigError: If a filter names an unknown store or region.
     """
+    started_at = datetime.now()
     raw = load_raw_tables(settings.data_dir)
-    log.info("Loaded raw tables: %s", {t: len(df) for t, df in raw.items()})
+    for table, frame in raw.items():
+        log.info(
+            "Loaded %s: %d rows",
+            table,
+            len(frame),
+            extra={"stage": "load", "table": table, "rows": len(frame)},
+        )
 
     rules = default_rules(pd.Timestamp(settings.as_of), settings.price_tolerance)
     outcome = validate(raw, rules)
@@ -54,9 +62,17 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
             rule.fixed,
             rule.rejected,
             rule.flagged,
+            extra={"stage": "validate", **asdict(rule)},
         )
 
-    sales = filter_sales(outcome.clean["transactions"], outcome.clean["stores"], settings)
+    clean_sales = outcome.clean["transactions"]
+    sales = filter_sales(clean_sales, outcome.clean["stores"], settings)
+    log.info(
+        "Selected %d of %d clean sales",
+        len(sales),
+        len(clean_sales),
+        extra={"stage": "filter", "rows_in": len(clean_sales), "rows_out": len(sales)},
+    )
     report = Report(
         generated_at=datetime.now(),
         kpis={"revenue_by_store": revenue_by(sales, ["store_id"])},
@@ -66,10 +82,15 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
         issues=outcome.flagged,
     )
 
-    files = []
+    files = [write_manifest(settings, outcome.row_counts, started_at)]
     for writer in writers or [CsvWriter(), HtmlWriter()]:
         files.extend(writer.write(report, settings.output_dir))
-    log.info("Wrote %d files to %s", len(files), settings.output_dir)
+    log.info(
+        "Wrote %d files to %s",
+        len(files),
+        settings.output_dir,
+        extra={"stage": "write", "files": [str(f) for f in files]},
+    )
 
     return RunResult(settings.output_dir, outcome.row_counts, outcome.rule_outcomes, files)
 

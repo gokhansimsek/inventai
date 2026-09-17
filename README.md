@@ -3,9 +3,9 @@
 Validates, cleans and reports on one month of sales and inventory data for a
 five-store Turkish retail chain. The brief is in [case_study.md](case_study.md).
 
-> **Status:** work in progress. The first end-to-end version runs: it loads
-> the data, applies the first validation rules, computes revenue by store and
-> writes an HTML + CSV report.
+> **Status:** work in progress. Validation is complete (see
+> [docs/data-quality.md](docs/data-quality.md)); revenue by store is the only KPI
+> so far.
 
 ## Setup
 
@@ -18,20 +18,30 @@ uv sync
 ## Run
 
 ```bash
-uv run retail-analytics run                          # all stores -> output/
-uv run retail-analytics run --store S-001 --store S-002
+uv run retail-analytics run                                  # everything
+uv run retail-analytics run --store S-001 --store S-002      # some stores
+uv run retail-analytics run --region Marmara                 # a region
+uv run retail-analytics run --from 2024-03-01 --to 2024-03-15
+uv run retail-analytics run --output-dir report              # fixed folder
 uv run retail-analytics run --help
 ```
 
-Open `output/report.html` in a browser. Alongside it:
+Settings are read from [config/default.yaml](config/default.yaml) (or `--config
+PATH`); command-line flags override them. An unknown store or region, an invalid
+setting or a missing input file stops the run with a message and exit code 1.
+
+Each run writes to `output/<timestamp>/` unless `--output-dir` is given:
 
 | Path | Contents |
 |---|---|
+| `report.html` | The report; open in a browser |
 | `kpis/*.csv` | One file per KPI table |
 | `quarantine/<table>.csv` | Rows that could not be used, with `reason` and `rule_id` |
-| `issues/<table>.csv` | Rows kept but flagged for review |
-| `data_quality.csv` | Every rule and how many rows it affected |
+| `issues/<table>.csv` | Rows kept but flagged for review, with `reason` and `rule_id` |
+| `data_quality.csv` | Every rule, and how many rows it fixed, rejected and flagged |
 | `row_counts.csv` | Raw = clean + rejected, per input file |
+| `run.log.jsonl` | The run's log, one JSON event per line |
+| `run_manifest.json` | Settings used, input file hashes and row counts |
 
 ## Development
 
@@ -45,5 +55,6 @@ uv run pyright               # type check (Pylance engine)
 
 ## Documentation
 
+- [docs/data-quality.md](docs/data-quality.md) — every check, what it found, how it is handled
 - [docs/design-session.md](docs/design-session.md) — the design decisions, as they were made
 - [AI_USAGE.md](AI_USAGE.md) — how AI tools were used
