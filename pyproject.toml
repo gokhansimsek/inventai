@@ -1,0 +1,70 @@
+[project]
+name = "retail-analytics"
+version = "0.1.0"
+description = "Retail analytics pipeline: validate, clean and report KPIs for a multi-store retail chain."
+authors = [
+    { name = "gokhansimsek", email = "gokhansimsek87@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "jinja2>=3.1.6",
+    "pandas>=3.0.5",
+    "pandera>=0.33.1",
+    "plotly>=7.1.0",
+    "pydantic>=2.13.5",
+    "pyyaml>=6.0.3",
+    "typer>=0.27.2",
+]
+
+[project.scripts]
+retail-analytics = "retail_analytics.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.9.12,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pandas-stubs>=3.0.5.260914",
+    "pre-commit>=4.6.2",
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+    "types-pyyaml>=6.0.12.20260906",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "PL", "RUF", "ANN", "D"]
+ignore = [
+    "PLR2004", "PLR0913",
+    "D100", "D104",  # module and package docstrings are optional
+    "D101", "D106",  # class docstrings are optional; functions are enforced
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]  # test names are the spec
+
+[tool.pyright]
+# Same engine and mode as Pylance in VS Code, which also reads this section,
+# so the editor and the pre-commit hook report the same errors.
+typeCheckingMode = "standard"
+include = ["src", "tests", "tools"]
+venvPath = "."
+venv = ".venv"
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+plugins = ["pydantic.mypy"]
