@@ -1,11 +1,14 @@
 """Writers turn a Report into files. Add a format by adding a writer."""
 
+from collections.abc import Callable
+from html import escape
 from pathlib import Path
 from typing import Protocol
 
 import pandas as pd
 from jinja2 import Environment, PackageLoader, select_autoescape
 
+from retail_analytics.reporting import charts
 from retail_analytics.reporting.report import Report
 
 
@@ -69,7 +72,7 @@ class CsvWriter:
 
 
 class HtmlWriter:
-    """Stakeholder-facing report: a single self-contained HTML file."""
+    """Stakeholder-facing report: a single self-contained HTML file that works offline."""
 
     def __init__(self) -> None:
         """Load report templates from the package with HTML autoescaping."""
@@ -90,18 +93,222 @@ class HtmlWriter:
         """
         path = out_dir / "report.html"
         path.parent.mkdir(parents=True, exist_ok=True)
-        html = self._env.get_template("report.html.j2").render(report=report, table=_table)
+        html = self._env.get_template("report.html.j2").render(
+            report=report,
+            charts=_charts(report) if report.has_sales else {},
+            plotly_script=charts.plotly_script() if report.has_sales else "",
+            table=_table,
+            money=_money,
+            percent=_percent,
+            findings=_findings(report.data_quality),
+            turnover_period=_turnover_period(report.turnover_weeks),
+            quiet_checks=int(
+                (report.data_quality[["fixed", "rejected", "flagged"]].sum(axis=1) == 0).sum()
+            ),
+        )
         path.write_text(html, encoding="utf-8")
         return [path]
 
 
-def _table(frame: pd.DataFrame) -> str:
-    """Render a DataFrame as an HTML table for the report.
+def _charts(report: Report) -> dict[str, str]:
+    """Build the report's charts from its KPI tables.
+
+    Args:
+        report (Report): Report whose KPI tables contain sales.
+
+    Returns:
+        dict[str, str]: Chart HTML fragments keyed by name.
+    """
+    kpis = report.kpis
+    by_store = kpis["sales_by_store"]
+    by_store_margin = by_store.sort_values("gross_margin_pct", ascending=False)
+    by_category = kpis["sales_by_category"]
+    by_category_margin = by_category.sort_values("gross_margin_pct", ascending=False)
+    by_day = kpis["sales_by_day"]
+    turnover = kpis["inventory_turnover_by_store"]
+    return {
+        "revenue_by_store": charts.horizontal_bars(
+            by_store["store_name"].tolist(), by_store["revenue"].tolist(), ",.0f", "Revenue (TRY)"
+        ),
+        "margin_by_store": charts.horizontal_bars(
+            by_store_margin["store_name"].tolist(),
+            by_store_margin["gross_margin_pct"].tolist(),
+            ".1%",
+            "Gross margin",
+        ),
+        "revenue_by_category": charts.horizontal_bars(
+            by_category["category"].tolist(),
+            by_category["revenue"].tolist(),
+            ",.0f",
+            "Revenue (TRY)",
+        ),
+        "margin_by_category": charts.horizontal_bars(
+            by_category_margin["category"].tolist(),
+            by_category_margin["gross_margin_pct"].tolist(),
+            ".1%",
+            "Gross margin",
+        ),
+        "revenue_by_day": charts.line(
+            by_day["day"].tolist(), by_day["revenue"].tolist(), ",.0f", "Revenue (TRY)"
+        ),
+        "turnover_by_store": charts.horizontal_bars(
+            turnover["store_name"].tolist(), turnover["turnover"].tolist(), ".2f", "Turnover"
+        )
+        if not turnover.empty
+        else "",
+    }
+
+
+def _turnover_period(weeks: list[pd.Timestamp]) -> str:
+    """Describe the days covered by the inventory weeks used for turnover.
+
+    Args:
+        weeks (list[pd.Timestamp]): Start dates (Mondays) of the weeks used, in order.
+
+    Returns:
+        str: E.g. ``"2024-03-04 to 2024-03-31"``; empty if no week was used.
+    """
+    if not weeks:
+        return ""
+    last_day = weeks[-1] + pd.Timedelta(days=6)
+    return f"{weeks[0]:%Y-%m-%d} to {last_day:%Y-%m-%d}"
+
+
+def _findings(data_quality: pd.DataFrame) -> pd.DataFrame:
+    """Keep the rules that changed, removed or flagged at least one row.
+
+    Args:
+        data_quality (pd.DataFrame): One row per rule with fixed, rejected and flagged
+            counts.
+
+    Returns:
+        pd.DataFrame: Rules with a non-zero count, in execution order.
+    """
+    counts = data_quality[["fixed", "rejected", "flagged"]]
+    return data_quality[counts.sum(axis=1) > 0]
+
+
+COLUMN_LABELS = {
+    "store_id": "Store",
+    "store_name": "Store name",
+    "article_id": "Article",
+    "article_name": "Article name",
+    "gross_margin": "Gross margin (TRY)",
+    "gross_margin_pct": "Gross margin %",
+    "revenue": "Revenue (TRY)",
+    "cost": "Cost (TRY)",
+    "cogs": "COGS (TRY)",
+    "avg_inventory_value": "Avg inventory (TRY)",
+    "value": "Value (TRY)",
+    "inventory_sold_qty": "Sold per inventory",
+    "transaction_units": "Units per transactions",
+    "rule_id": "Rule",
+}
+MONEY_COLUMNS = {"revenue", "cost", "gross_margin", "cogs", "avg_inventory_value", "value"}
+
+
+def _table(frame: pd.DataFrame, columns: list[str] | None = None) -> str:
+    """Render a table for people: readable headers, TRY without decimals, percentages.
+
+    Text columns are left-aligned and numbers right-aligned.
 
     Args:
         frame (pd.DataFrame): The table to render.
+        columns (list[str] | None): Columns to show, in order; None shows all.
 
     Returns:
-        str: HTML ``<table>`` markup with thousands separators and 2 decimal places.
+        str: HTML ``<table>`` markup with every value escaped.
     """
-    return frame.to_html(index=False, classes="data", border=0, float_format="{:,.2f}".format)
+    shown = frame[columns] if columns else frame
+    classes = [_cell_class(column) for column in shown.columns]
+    header = "".join(
+        f'<th class="{css}">{escape(COLUMN_LABELS.get(c, c.replace("_", " ").capitalize()))}</th>'
+        for c, css in zip(shown.columns, classes, strict=True)
+    )
+    formatters = [_formatter(shown[column]) for column in shown.columns]
+    body = "".join(
+        "<tr>"
+        + "".join(
+            f'<td class="{css}">{escape(fmt(value))}</td>'
+            for value, fmt, css in zip(row, formatters, classes, strict=True)
+        )
+        + "</tr>"
+        for row in shown.itertuples(index=False)
+    )
+    return f'<table class="data"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>'
+
+
+TEXT_COLUMNS = {
+    "store_id",
+    "store_name",
+    "region",
+    "article_id",
+    "article_name",
+    "category",
+    "table",
+    "severity",
+    "rule_id",
+    "month",
+}
+LONG_TEXT_COLUMNS = {"description"}
+
+
+def _cell_class(column: str) -> str:
+    """Choose the alignment class for a column.
+
+    Args:
+        column (str): Column name.
+
+    Returns:
+        str: ``"text-long"`` for prose, ``"text"`` for short text, ``"num"`` otherwise.
+    """
+    if column in LONG_TEXT_COLUMNS:
+        return "text-long"
+    return "text" if column in TEXT_COLUMNS else "num"
+
+
+def _formatter(values: pd.Series) -> Callable[[object], str]:
+    """Choose how to display one column's values.
+
+    Args:
+        values (pd.Series): The column, named after the KPI field it holds.
+
+    Returns:
+        Callable[[object], str]: Function turning one value into display text.
+    """
+    column = str(values.name)
+    if column in MONEY_COLUMNS:
+        return lambda v: _money(float(v))  # type: ignore[arg-type]
+    if column.endswith("_pct"):
+        return lambda v: _percent(float(v))  # type: ignore[arg-type]
+    if column == "turnover":
+        return lambda v: f"{float(v):.2f}"  # type: ignore[arg-type]
+    if pd.api.types.is_datetime64_any_dtype(values):
+        return lambda v: f"{v:%Y-%m-%d}"
+    if pd.api.types.is_integer_dtype(values):
+        return lambda v: f"{v:,}"
+    return str
+
+
+def _money(value: float) -> str:
+    """Format an amount in TRY with thousands separators and no decimals.
+
+    Args:
+        value (float): Amount in TRY.
+
+    Returns:
+        str: E.g. ``"57,423,657"``.
+    """
+    return f"{value:,.0f}"
+
+
+def _percent(value: float) -> str:
+    """Format a fraction as a percentage with one decimal.
+
+    Args:
+        value (float): A fraction, e.g. 0.1794.
+
+    Returns:
+        str: E.g. ``"17.9%"``.
+    """
+    return f"{value:.1%}"

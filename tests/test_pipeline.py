@@ -21,7 +21,7 @@ def test_every_raw_row_is_either_processed_or_quarantined(tmp_path: Path) -> Non
 
     assert result.row_counts["transactions"].raw == 28_890
     assert (tmp_path / "report.html").is_file()
-    assert (tmp_path / "kpis" / "revenue_by_store.csv").is_file()
+    assert (tmp_path / "kpis" / "sales_by_store.csv").is_file()
 
 
 def test_known_data_issues_are_found_in_the_real_data(tmp_path: Path) -> None:
@@ -43,14 +43,14 @@ def test_known_data_issues_are_found_in_the_real_data(tmp_path: Path) -> None:
 
 
 def _revenue(output_dir: Path) -> pd.DataFrame:
-    return pd.read_csv(output_dir / "kpis" / "revenue_by_store.csv")
+    return pd.read_csv(output_dir / "kpis" / "sales_by_store.csv")
 
 
 def test_region_filter_keeps_only_that_regions_stores(tmp_path: Path) -> None:
     run_pipeline(Settings(data_dir=DATA_DIR, output_dir=tmp_path, regions=("Marmara",)))
 
     revenue = _revenue(tmp_path)
-    assert revenue["store_id"].tolist() == ["S-001", "S-005"]
+    assert sorted(revenue["store_id"]) == ["S-001", "S-005"]
     assert round(revenue["revenue"].sum(), 2) == 17_198_488.99
 
 
@@ -74,3 +74,46 @@ def test_run_manifest_records_settings_row_counts_and_input_hashes(tmp_path: Pat
         "inventory.csv",
     }
     assert all(len(f["sha256"]) == 64 for f in manifest["input_files"].values())
+
+
+KPI_FILES = {
+    "summary",
+    "sales_by_store",
+    "sales_by_category",
+    "sales_by_month",
+    "sales_by_week",
+    "sales_by_day",
+    "top_by_revenue",
+    "bottom_by_revenue",
+    "top_by_margin_try",
+    "bottom_by_margin_try",
+    "top_by_margin_pct",
+    "bottom_by_margin_pct",
+    "inventory_turnover_by_store",
+    "sales_vs_inventory",
+    "possible_returns",
+}
+
+
+def test_kpis_match_an_independent_calculation_on_the_real_data(tmp_path: Path) -> None:
+    run_pipeline(Settings(data_dir=DATA_DIR, output_dir=tmp_path))
+
+    kpis = tmp_path / "kpis"
+    assert {f.stem for f in kpis.glob("*.csv")} == KPI_FILES
+    summary = pd.read_csv(kpis / "summary.csv").iloc[0]
+    assert round(float(summary["revenue"]), 2) == 57_423_656.53
+    assert round(float(summary["cost"]), 2) == 47_121_676.23
+    assert round(float(summary["gross_margin_pct"]), 6) == 0.179403
+    turnover = pd.read_csv(kpis / "inventory_turnover_by_store.csv").set_index("store_id")
+    assert turnover["turnover"].round(6).to_dict()["S-001"] == 0.884191
+    assert len(pd.read_csv(kpis / "top_by_revenue.csv")) == 10
+    assert pd.read_csv(kpis / "possible_returns.csv")["transactions"].tolist() == [576]
+
+
+def test_a_selection_with_no_sales_still_produces_a_report(tmp_path: Path) -> None:
+    empty = date(2023, 1, 1)
+    run_pipeline(Settings(data_dir=DATA_DIR, output_dir=tmp_path, date_from=empty, date_to=empty))
+
+    html = (tmp_path / "report.html").read_text(encoding="utf-8")
+    assert "No sales match this selection" in html
+    assert (tmp_path / "data_quality.csv").is_file()

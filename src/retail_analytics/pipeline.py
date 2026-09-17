@@ -1,4 +1,4 @@
-"""The run, end to end: load -> validate -> compute KPIs -> write report."""
+"""The run, end to end: load -> validate -> filter -> compute KPIs -> write report."""
 
 import logging
 from dataclasses import asdict, dataclass
@@ -8,16 +8,30 @@ from pathlib import Path
 import pandas as pd
 
 from retail_analytics.config import Settings
-from retail_analytics.filters import filter_sales
+from retail_analytics.filters import filter_by_store, filter_sales
 from retail_analytics.io.manifest import write_manifest
 from retail_analytics.io.readers import load_raw_tables
-from retail_analytics.kpis.revenue import revenue_by
+from retail_analytics.kpis.articles import rank_articles
+from retail_analytics.kpis.inventory import (
+    TurnoverResult,
+    compare_sales_with_inventory,
+    inventory_turnover,
+)
+from retail_analytics.kpis.returns import summarise_possible_returns
+from retail_analytics.kpis.sales import enrich_sales, summarise_sales
 from retail_analytics.reporting.report import Report
 from retail_analytics.reporting.writers import CsvWriter, HtmlWriter, Writer
-from retail_analytics.validation.engine import RowCounts, RuleOutcome, ValidationOutcome, validate
+from retail_analytics.validation.engine import (
+    RowCounts,
+    RuleOutcome,
+    ValidationOutcome,
+    validate,
+)
 from retail_analytics.validation.registry import default_rules
 
 log = logging.getLogger(__name__)
+
+STORE_COLUMNS = ["store_id", "store_name", "region"]
 
 
 @dataclass(frozen=True)
@@ -73,14 +87,24 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
         len(clean_sales),
         extra={"stage": "filter", "rows_in": len(clean_sales), "rows_out": len(sales)},
     )
+
+    stores, articles = outcome.clean["stores"], outcome.clean["articles"]
+    inventory = filter_by_store(outcome.clean["inventory"], stores, settings)
+    turnover = inventory_turnover(inventory, articles, settings.date_from, settings.date_to)
     report = Report(
-        generated_at=datetime.now(),
-        kpis={"revenue_by_store": revenue_by(sales, ["store_id"])},
+        generated_at=started_at,
+        selection=_describe_selection(settings),
+        has_sales=not sales.empty,
+        kpis=_compute_kpis(outcome, sales, inventory, turnover, settings),
+        turnover_weeks=turnover.weeks,
+        top_n=settings.top_n,
+        min_units_for_margin_pct=settings.min_units_for_margin_pct,
         data_quality=pd.DataFrame([asdict(r) for r in outcome.rule_outcomes]),
         row_counts=_row_counts_table(outcome),
         quarantine=outcome.rejected,
         issues=outcome.flagged,
     )
+    log.info("Computed %d KPI tables", len(report.kpis), extra={"stage": "kpis"})
 
     files = [write_manifest(settings, outcome.row_counts, started_at)]
     for writer in writers or [CsvWriter(), HtmlWriter()]:
@@ -93,6 +117,84 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
     )
 
     return RunResult(settings.output_dir, outcome.row_counts, outcome.rule_outcomes, files)
+
+
+def _compute_kpis(
+    outcome: ValidationOutcome,
+    sales: pd.DataFrame,
+    inventory: pd.DataFrame,
+    turnover: TurnoverResult,
+    settings: Settings,
+) -> dict[str, pd.DataFrame]:
+    """Compute every KPI table for the selected data.
+
+    Args:
+        outcome (ValidationOutcome): Validated tables and quarantined rows.
+        sales (pd.DataFrame): Clean sales inside the selection.
+        inventory (pd.DataFrame): Clean inventory for the selected stores.
+        turnover (TurnoverResult): Inventory turnover for the selection.
+        settings (Settings): Run settings: selection, date range and ranking options.
+
+    Returns:
+        dict[str, pd.DataFrame]: KPI tables keyed by the file name they are written to.
+    """
+    stores, articles = outcome.clean["stores"], outcome.clean["articles"]
+    enriched = enrich_sales(sales, articles, stores)
+
+    return {
+        "summary": summarise_sales(enriched, []),
+        "sales_by_store": summarise_sales(enriched, STORE_COLUMNS),
+        "sales_by_category": summarise_sales(enriched, ["category"]),
+        "sales_by_month": summarise_sales(enriched, ["month"]).sort_values("month"),
+        "sales_by_week": summarise_sales(enriched, ["week"]).sort_values("week"),
+        "sales_by_day": summarise_sales(enriched, ["day"]).sort_values("day"),
+        **rank_articles(enriched, settings.top_n, settings.min_units_for_margin_pct),
+        "inventory_turnover_by_store": stores[STORE_COLUMNS]
+        .merge(turnover.by_store, on="store_id")
+        .sort_values("turnover", ascending=False),
+        "sales_vs_inventory": compare_sales_with_inventory(enriched, inventory, turnover.weeks),
+        "possible_returns": summarise_possible_returns(
+            _selected(outcome.rejected["transactions"], stores, settings)
+        ),
+    }
+
+
+def _selected(
+    quarantined_sales: pd.DataFrame, stores: pd.DataFrame, settings: Settings
+) -> pd.DataFrame:
+    """Narrow quarantined sales to the selection, so possible returns match revenue.
+
+    Args:
+        quarantined_sales (pd.DataFrame): Every quarantined transaction; empty with no
+            columns when nothing was quarantined.
+        stores (pd.DataFrame): Validated store master data.
+        settings (Settings): Run settings with the selection.
+
+    Returns:
+        pd.DataFrame: Quarantined rows with a valid date, for known, selected stores
+            inside the date range.
+    """
+    if quarantined_sales.empty:
+        return quarantined_sales
+    dates = pd.to_datetime(quarantined_sales["date"], errors="coerce")
+    dated = quarantined_sales[dates.notna()].assign(date=dates[dates.notna()])
+    return filter_sales(dated, stores, settings)
+
+
+def _describe_selection(settings: Settings) -> str:
+    """Describe the store, region and date selection in words.
+
+    Args:
+        settings (Settings): Run settings.
+
+    Returns:
+        str: E.g. ``"Stores: all · Regions: Marmara · Dates: 2024-03-01 to 2024-03-15"``.
+    """
+    stores = ", ".join(settings.stores) or "all"
+    regions = ", ".join(settings.regions) or "all"
+    start = settings.date_from.isoformat() if settings.date_from else "start of data"
+    end = settings.date_to.isoformat() if settings.date_to else "end of data"
+    return f"Stores: {stores} · Regions: {regions} · Dates: {start} to {end}"
 
 
 def _row_counts_table(outcome: ValidationOutcome) -> pd.DataFrame:

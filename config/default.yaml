@@ -16,3 +16,9 @@ regions: []       # e.g. [Marmara]; values as in stores.csv, not North/South/...
 # A sale priced more than this fraction away from the article's recommended price
 # is flagged as a price outlier (0.5 = below 50% or above 150%).
 price_tolerance: 0.5
+
+# Top/bottom article lists: how many articles each list holds.
+top_n: 10
+# Articles selling fewer units than this are left out of the margin % rankings,
+# where a handful of sales would otherwise dominate.
+min_units_for_margin_pct: 20

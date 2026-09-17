@@ -26,20 +26,42 @@ def filter_sales(sales: pd.DataFrame, stores: pd.DataFrame, settings: Settings) 
     Raises:
         ConfigError: If a requested store or region does not exist.
     """
+    selected = filter_by_store(sales, stores, settings)
+    keep = pd.Series(True, index=selected.index)
+    if settings.date_from:
+        keep &= selected["date"] >= pd.Timestamp(settings.date_from)
+    if settings.date_to:
+        keep &= selected["date"] <= pd.Timestamp(settings.date_to)
+    return selected[keep]
+
+
+def filter_by_store(rows: pd.DataFrame, stores: pd.DataFrame, settings: Settings) -> pd.DataFrame:
+    """Keep only rows belonging to known stores inside the store and region selection.
+
+    Rows for stores missing from the master data are always dropped, so figures built
+    from quarantined rows cover the same stores as revenue.
+
+    Args:
+        rows (pd.DataFrame): Any table with a ``store_id`` column.
+        stores (pd.DataFrame): Validated store master data with ``store_id`` and
+            ``region``.
+        settings (Settings): Run settings; empty selections keep every known store.
+
+    Returns:
+        pd.DataFrame: The rows for the selected stores.
+
+    Raises:
+        ConfigError: If a requested store or region does not exist.
+    """
     _check_known("store", settings.stores, stores["store_id"])
     _check_known("region", settings.regions, stores["region"])
 
-    keep = pd.Series(True, index=sales.index)
+    selected = stores
     if settings.stores:
-        keep &= sales["store_id"].isin(settings.stores)
+        selected = selected[selected["store_id"].isin(settings.stores)]
     if settings.regions:
-        in_regions = stores.loc[stores["region"].isin(settings.regions), "store_id"]
-        keep &= sales["store_id"].isin(in_regions)
-    if settings.date_from:
-        keep &= sales["date"] >= pd.Timestamp(settings.date_from)
-    if settings.date_to:
-        keep &= sales["date"] <= pd.Timestamp(settings.date_to)
-    return sales[keep]
+        selected = selected[selected["region"].isin(settings.regions)]
+    return rows[rows["store_id"].isin(selected["store_id"])]
 
 
 def _check_known(kind: str, requested: tuple[str, ...], known: pd.Series) -> None:

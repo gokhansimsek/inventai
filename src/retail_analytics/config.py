@@ -27,6 +27,8 @@ class Settings(BaseModel):
     date_to: date | None = None
     as_of: date = Field(default_factory=date.today)
     price_tolerance: float = Field(default=0.5, gt=0)
+    top_n: int = Field(default=10, ge=1)
+    min_units_for_margin_pct: int = Field(default=20, ge=0)
 
     @model_validator(mode="after")
     def _date_range_is_ordered(self) -> Self:

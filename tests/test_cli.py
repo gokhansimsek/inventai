@@ -45,7 +45,7 @@ def test_cli_flags_override_the_config_file_and_logs_are_json_lines(tmp_path: Pa
     exit_code, output = _run("--config", str(config), "--output-dir", str(out), "--store", "S-003")
 
     assert exit_code == 0, output
-    assert pd.read_csv(out / "kpis" / "revenue_by_store.csv")["store_id"].tolist() == ["S-003"]
+    assert pd.read_csv(out / "kpis" / "sales_by_store.csv")["store_id"].tolist() == ["S-003"]
     manifest = json.loads((out / "run_manifest.json").read_text(encoding="utf-8"))
     assert manifest["settings"]["price_tolerance"] == 0.4
     events = [json.loads(line) for line in (out / "run.log.jsonl").read_text().splitlines()]
