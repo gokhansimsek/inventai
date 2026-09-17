@@ -1,0 +1,16 @@
+transaction_id,date,store_id,article_id,quantity,selling_price,currency,discount_pct,customer_id,weather_condition,original_date,reason,rule_id
+TXN-128747,2024-03-31,S-003,ART-00008,1,33275.0,KRS,0.0,CUST-000644,Sunny,2027-02-01,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128743,2024-03-31,S-002,ART-00006,2,331.66,TRY,0.0,CUST-000574,Sunny,2027-01-22,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128745,2024-03-31,S-002,ART-00026,3,815.79,TRY,0.0,CUST-000733,Sunny,2027-01-22,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128733,2024-03-31,S-003,ART-00009,2,25479.0,KRS,0.0,CUST-001164,Sunny,2027-02-01,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128735,2024-03-31,S-001,ART-00026,3,815.79,TRY,0.0,CUST-000886,Sunny,2027-01-22,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128738,2024-03-31,S-002,ART-00024,1,537.1,TRY,0.0,CUST-000860,Sunny,2027-02-01,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128739,2024-03-31,S-005,ART-00001,2,4684.07,TRY,0.0,CUST-000010,Sunny,2027-01-22,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128736,2024-03-31,S-002,ART-00005,2,520.73,TRY,0.0,CUST-000319,Sunny,2027-01-22,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128742,2024-03-31,S-002,ART-00009,2,254.79,TRY,0.0,CUST-001102,Sunny,2027-02-01,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128741,2024-03-31,S-001,ART-00010,3,306.8,TRY,0.0,CUST-000647,Sunny,2027-01-22,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128740,2024-03-31,S-005,ART-00028,2,102.39,TRY,0.0,CUST-001053,Sunny,2027-01-15,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128737,2024-03-31,S-001,ART-00023,3,364.58,TRY,0.0,CUST-000708,Sunny,2027-01-15,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128746,2024-03-31,S-003,ART-00001,3,468407.0,KRS,0.0,CUST-000111,Sunny,2027-01-15,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128734,2024-03-31,S-002,ART-00014,3,548.36,TRY,0.0,CUST-001305,Sunny,2027-02-01,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE
+TXN-128744,2024-03-31,S-005,ART-00003,1,317.89,TRY,0.0,CUST-000001,Sunny,2027-02-01,future date replaced with the date of preceding transaction TXN-128732,TRANSACTIONS_DATE_IN_FUTURE

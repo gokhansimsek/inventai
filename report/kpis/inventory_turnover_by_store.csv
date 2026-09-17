@@ -1,0 +1,6 @@
+store_id,store_name,region,weeks,cogs,avg_inventory_value,turnover
+S-003,Izmir Supermarket,Aegean,4,5454665.24,5515527.035,0.9889653709221643
+S-005,Bursa Supermarket,Marmara,4,5702321.04,6347597.907500001,0.898343140680418
+S-001,Istanbul Supermarket,Marmara,4,4860245.33,5496826.05,0.884191219767633
+S-004,Antalya Hypermarket,Mediterranean,4,4310408.82,5202489.3325000005,0.8285281419171463
+S-002,Ankara Hypermarket,Central Anatolia,4,5047521.09,6143098.13125,0.821657245604333

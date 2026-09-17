@@ -1,0 +1,5 @@
+article_id,article_name,category,sub_category,brand,purchase_price,recommended_selling_price,reason,rule_id
+ART-00024,Bizim Meat & Poultry Item 24,Fresh Produce,Meat & Poultry,Bizim,660.74,537.1,purchase_price 660.74 is above recommended_selling_price 537.10,ARTICLES_COST_ABOVE_RECOMMENDED_PRICE
+ART-00068,Tamek Oral Care Item 68,Personal Care,Oral Care,Tamek,900.34,797.09,purchase_price 900.34 is above recommended_selling_price 797.09,ARTICLES_COST_ABOVE_RECOMMENDED_PRICE
+ART-00113,Arcelik Men Item 113,Apparel,Men,Arcelik,1345.63,1043.02,purchase_price 1345.63 is above recommended_selling_price 1043.02,ARTICLES_COST_ABOVE_RECOMMENDED_PRICE
+ART-00186,Eti Haircare Item 186,Personal Care,Haircare,Eti,485.77,356.72,purchase_price 485.77 is above recommended_selling_price 356.72,ARTICLES_COST_ABOVE_RECOMMENDED_PRICE

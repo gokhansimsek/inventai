@@ -1,0 +1,2 @@
+store_id,store_name,city,region,store_type,opening_date,area_sqft,reason,rule_id
+S-004,Antalya Hypermarket,Antalya,Mediterranean,Hypermarket,2027-03-15,15869,opening_date 2027-03-15 is after the run date 2026-09-17,STORES_OPENING_DATE_IN_FUTURE

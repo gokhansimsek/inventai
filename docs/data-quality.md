@@ -63,7 +63,8 @@ instead: no number computed from it could be trusted.
 | Issue | Rows | Outcome | Handling |
 |---|---:|---|---|
 | Stock does not balance (opening + received - sold != closing) | 28 | Flag | Off by 1 to 10 units. Kept, using the reported stock levels. |
-| `sold_qty` does not match sales in `transactions.csv` | — | Reported | Inventory covers 497 store-article pairs, sales cover 1,038, and weekly quantities do not reconcile. Inventory turnover is computed from the inventory file alone. |
+| `sold_qty` does not match sales in `transactions.csv` | — | Reported | Inventory covers 497 store-article pairs, sales cover 1,038, and weekly quantities do not reconcile: for the pairs both files cover, inventory records 31,808 units sold and transactions 28,172. The report shows the comparison per store and week; turnover uses the inventory file alone ([ADR 0004](adr/0004-inventory-turnover-from-inventory-file.md)). |
+| Weeks are independent samples | — | Assumption | Each store-week covers a different 52–79 articles, and closing stock matches the next week's opening stock in only 3 of 667 consecutive pairs. Figures take sales and stock from the same rows and never chain weeks. |
 
 ## Checks that found nothing
 

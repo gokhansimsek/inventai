@@ -65,6 +65,27 @@ Kept up to date at each milestone rather than written at the end.
   The Day-1 figure of 4,345 KRS rows was likewise a pre-deduplication count; the
   correct figure is 4,324.
 
+### 5. KPIs, report and documentation
+
+- KPIs built test-first against hand-worked examples; chain totals (revenue,
+  cost, margin %, S-001 turnover) asserted against the independent pandas script.
+- Before writing the turnover formula, the AI profiled the inventory file and
+  found the weekly snapshots are independent samples (closing stock matches the
+  next week's opening in 3 of 667 cases). That shaped the formula and is
+  documented as an assumption rather than hidden.
+- Charts follow a written data-visualisation method (single series, no dual
+  axes, table beside every chart). The AI rendered the report in headless Edge
+  and inspected screenshots rather than trusting the code.
+- **AI errors caught:**
+  - The first render had cramped article tables, right-aligned prose and bar
+    value labels cut off by the neighbouring chart. All three were found from
+    screenshots, not tests.
+  - A README headline said "7,000+ values repaired"; checking it against the
+    rule counts gave 8,027.
+  - One small function (possible returns) had its implementation written in
+    the same step as its test, so the test was never seen failing first. It
+    is a slip in the test-first discipline, noted rather than hidden.
+
 ## Reflection
 
 To be completed at submission, with an honest AI / human ratio.

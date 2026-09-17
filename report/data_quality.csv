@@ -1,0 +1,39 @@
+rule_id,table,severity,description,fixed,rejected,flagged
+STORES_EXACT_COPY,stores,reject,A row in stores identical in every column to an earlier row is a copy; the first is kept and the copies are quarantined.,0,0,0
+STORES_TYPES,stores,reject,Every stores value must parse as its column type.,0,0,0
+STORES_OPENING_DATE_FORMAT,stores,fix,stores.opening_date accepts YYYY-MM-DD and DD-MM-YYYY; day-first dates are converted. Other formats and impossible dates are quarantined.,0,0,0
+STORES_AREA_SQFT_RANGE,stores,reject,stores.area_sqft must be greater than 0.,0,0,0
+STORES_STORE_TYPE_VALUE,stores,reject,"stores.store_type must be one of: Express, Hypermarket, Supermarket.",0,0,0
+STORES_KEY_CONFLICT,stores,reject,"Each store_id must identify one row in stores. When several valid rows share it with different values, all of them are quarantined.",0,0,0
+STORES_OPENING_DATE_IN_FUTURE,stores,flag,"stores.opening_date after the run date is impossible. No KPI uses it, so the row is kept and flagged.",0,0,1
+ARTICLES_EXACT_COPY,articles,reject,A row in articles identical in every column to an earlier row is a copy; the first is kept and the copies are quarantined.,0,0,0
+ARTICLES_TYPES,articles,reject,Every articles value must parse as its column type.,0,0,0
+ARTICLES_PURCHASE_PRICE_RANGE,articles,reject,articles.purchase_price must be greater than 0.,0,0,0
+ARTICLES_RECOMMENDED_SELLING_PRICE_RANGE,articles,reject,articles.recommended_selling_price must be greater than 0.,0,0,0
+ARTICLES_KEY_CONFLICT,articles,reject,"Each article_id must identify one row in articles. When several valid rows share it with different values, all of them are quarantined.",0,0,0
+ARTICLES_COST_ABOVE_RECOMMENDED_PRICE,articles,flag,"An article whose purchase price is above its recommended selling price loses money on every sale at that price. It may be deliberate, so it is kept and flagged.",0,0,4
+TRANSACTIONS_EXACT_COPY,transactions,reject,A row in transactions identical in every column to an earlier row is a copy; the first is kept and the copies are quarantined.,0,138,0
+TRANSACTIONS_CUSTOMER_ID_MISSING_SPELLINGS,transactions,fix,"Blank, N/A, NA, NULL and NONE in transactions.customer_id (any case) all mean 'no value' and are stored as null.",2292,0,0
+TRANSACTIONS_TYPES,transactions,reject,Every transactions value must parse as its column type.,0,0,0
+TRANSACTIONS_DATE_FORMAT,transactions,fix,transactions.date accepts YYYY-MM-DD and DD-MM-YYYY; day-first dates are converted. Other formats and impossible dates are quarantined.,1396,0,0
+TRANSACTIONS_DATE_IN_FUTURE,transactions,fix,"Dates after the run date are impossible. When transaction ids are in date order, such a row takes the date of the preceding transaction id and is flagged with its original date; otherwise it is quarantined.",15,0,15
+TRANSACTIONS_CURRENCY_VALUE,transactions,reject,"transactions.currency must be one of: KRS, TRY.",0,0,0
+TRANSACTIONS_KRS_TO_TRY,transactions,fix,Prices recorded in kurus (KRS) are converted to lira (TRY): 100 KRS = 1 TRY.,4324,0,0
+TRANSACTIONS_QUANTITY_NOT_POSITIVE,transactions,reject,"Quantity must be positive. Negative quantities may be returns, but nothing links them to an original sale, so they are quarantined and reported as possible returns.",0,577,0
+TRANSACTIONS_SELLING_PRICE_RANGE,transactions,reject,transactions.selling_price must be greater than 0.,0,0,0
+TRANSACTIONS_DISCOUNT_PCT_RANGE,transactions,reject,transactions.discount_pct must be between 0 and 100.,0,0,0
+TRANSACTIONS_KEY_CONFLICT,transactions,reject,"Each transaction_id must identify one row in transactions. When several valid rows share it with different values, all of them are quarantined.",0,0,0
+TRANSACTIONS_STORE_ID_UNKNOWN,transactions,reject,Every store_id in transactions must exist in stores.,0,115,0
+TRANSACTIONS_ARTICLE_ID_UNKNOWN,transactions,reject,Every article_id in transactions must exist in articles.,0,0,0
+TRANSACTIONS_PRICE_OUTLIER,transactions,flag,A selling price more than 50% away from the article's recommended price suggests a unit or entry error. The sale is kept and flagged.,0,0,0
+INVENTORY_EXACT_COPY,inventory,reject,A row in inventory identical in every column to an earlier row is a copy; the first is kept and the copies are quarantined.,0,0,0
+INVENTORY_TYPES,inventory,reject,Every inventory value must parse as its column type.,0,0,0
+INVENTORY_DATE_FORMAT,inventory,fix,inventory.date accepts YYYY-MM-DD and DD-MM-YYYY; day-first dates are converted. Other formats and impossible dates are quarantined.,0,0,0
+INVENTORY_OPENING_STOCK_RANGE,inventory,reject,inventory.opening_stock must be at least 0.,0,0,0
+INVENTORY_RECEIVED_QTY_RANGE,inventory,reject,inventory.received_qty must be at least 0.,0,0,0
+INVENTORY_SOLD_QTY_RANGE,inventory,reject,inventory.sold_qty must be at least 0.,0,0,0
+INVENTORY_CLOSING_STOCK_RANGE,inventory,reject,inventory.closing_stock must be at least 0.,0,0,0
+INVENTORY_KEY_CONFLICT,inventory,reject,"Each date/store_id/article_id must identify one row in inventory. When several valid rows share it with different values, all of them are quarantined.",0,0,0
+INVENTORY_STORE_ID_UNKNOWN,inventory,reject,Every store_id in inventory must exist in stores.,0,0,0
+INVENTORY_ARTICLE_ID_UNKNOWN,inventory,reject,Every article_id in inventory must exist in articles.,0,0,0
+INVENTORY_STOCK_IMBALANCE,inventory,flag,"opening_stock + received_qty - sold_qty should equal closing_stock. Rows that do not balance are kept, using the reported stock levels, and flagged.",0,0,28

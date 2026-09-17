@@ -1,0 +1,5 @@
+table,raw,clean,rejected
+stores,5,5,0
+articles,200,200,0
+transactions,28890,28060,830
+inventory,1326,1326,0

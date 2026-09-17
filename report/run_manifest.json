@@ -1,0 +1,55 @@
+{
+  "started_at": "2026-09-17T19:50:21",
+  "settings": {
+    "data_dir": "data",
+    "output_dir": "report",
+    "stores": [],
+    "regions": [],
+    "date_from": null,
+    "date_to": null,
+    "as_of": "2026-09-17",
+    "price_tolerance": 0.5,
+    "top_n": 10,
+    "min_units_for_margin_pct": 20
+  },
+  "input_files": {
+    "stores.csv": {
+      "bytes": 425,
+      "sha256": "f80b3b0d7807c6a1b7386a7d040a0983d17ac578fdee2a6b564a7f7824626e09"
+    },
+    "articles.csv": {
+      "bytes": 15259,
+      "sha256": "263fb4269b4c4f238f2cc205fe815f1ce65ce7770905688214722adf922f4153"
+    },
+    "transactions.csv": {
+      "bytes": 2093389,
+      "sha256": "31fc3976b3611bad2a7214a7f5770e51d6d671ae13c6d6ff303e223eb9384d81"
+    },
+    "inventory.csv": {
+      "bytes": 52054,
+      "sha256": "dd88f4e5f7531391fa64043224f89d0b624926c963a3debc617e14f0d0acf591"
+    }
+  },
+  "row_counts": {
+    "stores": {
+      "raw": 5,
+      "clean": 5,
+      "rejected": 0
+    },
+    "articles": {
+      "raw": 200,
+      "clean": 200,
+      "rejected": 0
+    },
+    "transactions": {
+      "raw": 28890,
+      "clean": 28060,
+      "rejected": 830
+    },
+    "inventory": {
+      "raw": 1326,
+      "clean": 1326,
+      "rejected": 0
+    }
+  }
+}
