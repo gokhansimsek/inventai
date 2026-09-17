@@ -1,0 +1,201 @@
+article_id,article_name,category,sub_category,brand,purchase_price,recommended_selling_price
+ART-00001,Bizim Small Appliances Item 1,Electronics,Small Appliances,Bizim,4066.21,4684.07
+ART-00002,Sutas Bath & Body Item 2,Personal Care,Bath & Body,Sutas,258.4,313.85
+ART-00003,Eti Detergents Item 3,Home Care,Detergents,Eti,252.76,317.89
+ART-00004,Bizim Fresheners Item 4,Home Care,Fresheners,Bizim,491.99,673.49
+ART-00005,Tukas Men Item 5,Apparel,Men,Tukas,420.64,520.73
+ART-00006,Penguen Meat & Poultry Item 6,Fresh Produce,Meat & Poultry,Penguen,243.62,331.66
+ART-00007,Mis Snacks Item 7,Grocery,Snacks,Mis,492.91,693.32
+ART-00008,Bizim Dairy Item 8,Grocery,Dairy,Bizim,237.64,332.75
+ART-00009,Penguen Oral Care Item 9,Personal Care,Oral Care,Penguen,207.13,254.79
+ART-00010,Eti Meat & Poultry Item 10,Fresh Produce,Meat & Poultry,Eti,255.38,306.8
+ART-00011,Tamek Fruits Item 11,Fresh Produce,Fruits,Tamek,201.04,247.48
+ART-00012,Karaca Meat & Poultry Item 12,Fresh Produce,Meat & Poultry,Karaca,111.26,138.77
+ART-00013,Ulker Snacks Item 13,Grocery,Snacks,Ulker,406.42,516.3
+ART-00014,LC Waikiki Snacks Item 14,Grocery,Snacks,LC Waikiki,440.66,548.36
+ART-00015,Tukas Vegetables Item 15,Fresh Produce,Vegetables,Tukas,357.33,479.84
+ART-00016,Komili Oral Care Item 16,Personal Care,Oral Care,Komili,234.97,309.79
+ART-00017,LC Waikiki Fresheners Item 17,Home Care,Fresheners,LC Waikiki,279.92,370.91
+ART-00018,Komili Detergents Item 18,Home Care,Detergents,Komili,325.33,383.0
+ART-00019,Komili Staples Item 19,Grocery,Staples,Komili,321.17,445.66
+ART-00020,Eti Small Appliances Item 20,Electronics,Small Appliances,Eti,1985.36,2638.08
+ART-00021,Bizim Small Appliances Item 21,Electronics,Small Appliances,Bizim,4858.28,6841.59
+ART-00022,Karaca Staples Item 22,Grocery,Staples,Karaca,380.42,525.2
+ART-00023,Mis Detergents Item 23,Home Care,Detergents,Mis,283.47,364.58
+ART-00024,Bizim Meat & Poultry Item 24,Fresh Produce,Meat & Poultry,Bizim,660.74,537.1
+ART-00025,Mis Men Item 25,Apparel,Men,Mis,2556.67,3329.55
+ART-00026,Penguen Haircare Item 26,Personal Care,Haircare,Penguen,621.88,815.79
+ART-00027,DeFacto Men Item 27,Apparel,Men,DeFacto,1107.64,1280.26
+ART-00028,Torku Cleaners Item 28,Home Care,Cleaners,Torku,72.44,102.39
+ART-00029,Arcelik Staples Item 29,Grocery,Staples,Arcelik,411.69,594.23
+ART-00030,Komili Men Item 30,Apparel,Men,Komili,2047.3,2935.94
+ART-00031,Vestel Oral Care Item 31,Personal Care,Oral Care,Vestel,704.32,899.38
+ART-00032,Mis Haircare Item 32,Personal Care,Haircare,Mis,349.24,472.0
+ART-00033,Vestel Cleaners Item 33,Home Care,Cleaners,Vestel,292.83,358.53
+ART-00034,Pinar Beverages Item 34,Grocery,Beverages,Pinar,302.39,368.62
+ART-00035,Eti Skincare Item 35,Personal Care,Skincare,Eti,580.88,678.27
+ART-00036,Sutas Staples Item 36,Grocery,Staples,Sutas,54.01,65.97
+ART-00037,Sek Vegetables Item 37,Fresh Produce,Vegetables,Sek,229.52,313.76
+ART-00038,Arcelik Kids Item 38,Apparel,Kids,Arcelik,880.39,1137.37
+ART-00039,Dalan Accessories Item 39,Electronics,Accessories,Dalan,574.96,735.56
+ART-00040,Yumos Batteries Item 40,Electronics,Batteries,Yumos,4332.8,5053.13
+ART-00041,Dalan Meat & Poultry Item 41,Fresh Produce,Meat & Poultry,Dalan,52.43,71.75
+ART-00042,Sek Snacks Item 42,Grocery,Snacks,Sek,111.3,142.97
+ART-00043,Bizim Accessories Item 43,Electronics,Accessories,Bizim,2366.88,3342.85
+ART-00044,Karaca Dairy Item 44,Grocery,Dairy,Karaca,67.0,90.16
+ART-00045,Eti Men Item 45,Apparel,Men,Eti,2793.83,3924.24
+ART-00046,Arcelik Bath & Body Item 46,Personal Care,Bath & Body,Arcelik,411.02,579.29
+ART-00047,Tukas Snacks Item 47,Grocery,Snacks,Tukas,21.03,26.65
+ART-00048,Bingo Batteries Item 48,Electronics,Batteries,Bingo,3513.3,4810.24
+ART-00049,Arcelik Kids Item 49,Apparel,Kids,Arcelik,633.43,784.83
+ART-00050,Karaca Frozen Item 50,Grocery,Frozen,Karaca,49.26,61.28
+ART-00051,Arcelik Frozen Item 51,Grocery,Frozen,Arcelik,261.37,367.44
+ART-00052,Vestel Skincare Item 52,Personal Care,Skincare,Vestel,110.08,132.73
+ART-00053,Torku Men Item 53,Apparel,Men,Torku,1330.57,1906.01
+ART-00054,LC Waikiki Men Item 54,Apparel,Men,LC Waikiki,1864.65,2490.83
+ART-00055,LC Waikiki Small Appliances Item 55,Electronics,Small Appliances,LC Waikiki,2869.61,3572.41
+ART-00056,Sutas Detergents Item 56,Home Care,Detergents,Sutas,173.66,220.33
+ART-00057,Mis Meat & Poultry Item 57,Fresh Produce,Meat & Poultry,Mis,199.17,284.56
+ART-00058,Yumos Staples Item 58,Grocery,Staples,Yumos,318.16,419.62
+ART-00059,Karaca Staples Item 59,Grocery,Staples,Karaca,122.31,150.39
+ART-00060,Torku Detergents Item 60,Home Care,Detergents,Torku,246.94,295.67
+ART-00061,Mis Kids Item 61,Apparel,Kids,Mis,1912.7,2766.09
+ART-00062,Pinar Meat & Poultry Item 62,Fresh Produce,Meat & Poultry,Pinar,277.11,364.78
+ART-00063,Komili Fruits Item 63,Fresh Produce,Fruits,Komili,127.85,181.15
+ART-00064,Komili Meat & Poultry Item 64,Fresh Produce,Meat & Poultry,Komili,130.77,174.11
+ART-00065,Sek Vegetables Item 65,Fresh Produce,Vegetables,Sek,284.37,399.79
+ART-00066,Bizim Women Item 66,Apparel,Women,Bizim,2734.94,3839.39
+ART-00067,Bizim Dairy Item 67,Grocery,Dairy,Bizim,41.16,51.45
+ART-00068,Tamek Oral Care Item 68,Personal Care,Oral Care,Tamek,900.34,797.09
+ART-00069,Pinar Small Appliances Item 69,Electronics,Small Appliances,Pinar,648.18,929.18
+ART-00070,Karaca Fruits Item 70,Fresh Produce,Fruits,Karaca,43.33,54.63
+ART-00071,Bingo Men Item 71,Apparel,Men,Bingo,556.85,691.87
+ART-00072,Sek Beverages Item 72,Grocery,Beverages,Sek,347.39,469.0
+ART-00073,Bingo Fresheners Item 73,Home Care,Fresheners,Bingo,585.35,804.76
+ART-00074,Tamek Haircare Item 74,Personal Care,Haircare,Tamek,711.06,823.01
+ART-00075,Bingo Vegetables Item 75,Fresh Produce,Vegetables,Bingo,326.83,460.58
+ART-00076,Tamek Oral Care Item 76,Personal Care,Oral Care,Tamek,640.53,757.38
+ART-00077,Torku Dairy Item 77,Grocery,Dairy,Torku,115.79,165.06
+ART-00078,Torku Cleaners Item 78,Home Care,Cleaners,Torku,164.84,222.21
+ART-00079,Bizim Batteries Item 79,Electronics,Batteries,Bizim,4335.33,6243.16
+ART-00080,Vestel Cleaners Item 80,Home Care,Cleaners,Vestel,263.82,381.05
+ART-00081,Pinar Women Item 81,Apparel,Women,Pinar,522.96,753.65
+ART-00082,Ulker Oral Care Item 82,Personal Care,Oral Care,Ulker,131.3,168.11
+ART-00083,Bingo Vegetables Item 83,Fresh Produce,Vegetables,Bingo,254.3,331.46
+ART-00084,Sek Small Appliances Item 84,Electronics,Small Appliances,Sek,1348.14,1837.02
+ART-00085,Karaca Frozen Item 85,Grocery,Frozen,Karaca,349.69,500.78
+ART-00086,Sek Meat & Poultry Item 86,Fresh Produce,Meat & Poultry,Sek,164.76,192.93
+ART-00087,DeFacto Vegetables Item 87,Fresh Produce,Vegetables,DeFacto,146.15,205.25
+ART-00088,Vestel Vegetables Item 88,Fresh Produce,Vegetables,Vestel,144.44,183.8
+ART-00089,Mis Small Appliances Item 89,Electronics,Small Appliances,Mis,2816.62,3401.22
+ART-00090,Tamek Vegetables Item 90,Fresh Produce,Vegetables,Tamek,257.74,319.67
+ART-00091,Mis Men Item 91,Apparel,Men,Mis,1003.36,1283.26
+ART-00092,Sutas Kids Item 92,Apparel,Kids,Sutas,1501.97,1926.5
+ART-00093,Tamek Bath & Body Item 93,Personal Care,Bath & Body,Tamek,544.14,672.09
+ART-00094,DeFacto Meat & Poultry Item 94,Fresh Produce,Meat & Poultry,DeFacto,154.02,214.94
+ART-00095,Torku Oral Care Item 95,Personal Care,Oral Care,Torku,654.92,782.11
+ART-00096,Arcelik Snacks Item 96,Grocery,Snacks,Arcelik,313.41,432.68
+ART-00097,LC Waikiki Batteries Item 97,Electronics,Batteries,LC Waikiki,1052.73,1430.56
+ART-00098,Torku Batteries Item 98,Electronics,Batteries,Torku,823.1,1116.36
+ART-00099,Torku Dairy Item 99,Grocery,Dairy,Torku,104.43,150.11
+ART-00100,Ulker Women Item 100,Apparel,Women,Ulker,1760.74,2509.48
+ART-00101,Komili Dairy Item 101,Grocery,Dairy,Komili,404.68,546.43
+ART-00102,Sutas Kids Item 102,Apparel,Kids,Sutas,2860.11,4054.0
+ART-00103,Vestel Kids Item 103,Apparel,Kids,Vestel,1394.87,1983.58
+ART-00104,Arcelik Accessories Item 104,Electronics,Accessories,Arcelik,2305.34,3171.07
+ART-00105,Vestel Vegetables Item 105,Fresh Produce,Vegetables,Vestel,209.3,255.72
+ART-00106,Mis Accessories Item 106,Electronics,Accessories,Mis,1249.02,1562.22
+ART-00107,Komili Men Item 107,Apparel,Men,Komili,622.33,787.19
+ART-00108,Eti Haircare Item 108,Personal Care,Haircare,Eti,361.15,451.17
+ART-00109,Ulker Batteries Item 109,Electronics,Batteries,Ulker,1113.49,1420.86
+ART-00110,Pinar Kids Item 110,Apparel,Kids,Pinar,2598.85,3585.58
+ART-00111,Pinar Batteries Item 111,Electronics,Batteries,Pinar,4719.43,5850.13
+ART-00112,Karaca Batteries Item 112,Electronics,Batteries,Karaca,3762.83,4943.76
+ART-00113,Arcelik Men Item 113,Apparel,Men,Arcelik,1345.63,1043.02
+ART-00114,Sutas Dairy Item 114,Grocery,Dairy,Sutas,341.06,473.88
+ART-00115,Yumos Fruits Item 115,Fresh Produce,Fruits,Yumos,370.23,534.69
+ART-00116,Tukas Men Item 116,Apparel,Men,Tukas,1857.3,2505.31
+ART-00117,Komili Dairy Item 117,Grocery,Dairy,Komili,436.09,525.28
+ART-00118,Sutas Cleaners Item 118,Home Care,Cleaners,Sutas,158.53,197.85
+ART-00119,Bingo Batteries Item 119,Electronics,Batteries,Bingo,1336.13,1569.38
+ART-00120,Ulker Frozen Item 120,Grocery,Frozen,Ulker,499.96,627.44
+ART-00121,Ulker Fruits Item 121,Fresh Produce,Fruits,Ulker,309.07,443.48
+ART-00122,DeFacto Skincare Item 122,Personal Care,Skincare,DeFacto,164.29,195.15
+ART-00123,LC Waikiki Fruits Item 123,Fresh Produce,Fruits,LC Waikiki,380.67,490.88
+ART-00124,Tamek Cleaners Item 124,Home Care,Cleaners,Tamek,379.3,545.86
+ART-00125,Tamek Fruits Item 125,Fresh Produce,Fruits,Tamek,386.95,457.54
+ART-00126,LC Waikiki Beverages Item 126,Grocery,Beverages,LC Waikiki,345.13,496.11
+ART-00127,Sek Small Appliances Item 127,Electronics,Small Appliances,Sek,472.38,641.11
+ART-00128,Dalan Fruits Item 128,Fresh Produce,Fruits,Dalan,287.96,357.21
+ART-00129,Dalan Meat & Poultry Item 129,Fresh Produce,Meat & Poultry,Dalan,324.6,428.4
+ART-00130,Karaca Beverages Item 130,Grocery,Beverages,Karaca,225.62,284.55
+ART-00131,Sutas Kids Item 131,Apparel,Kids,Sutas,235.43,300.41
+ART-00132,Bingo Accessories Item 132,Electronics,Accessories,Bingo,4807.86,6445.78
+ART-00133,Komili Small Appliances Item 133,Electronics,Small Appliances,Komili,2233.89,3060.74
+ART-00134,DeFacto Vegetables Item 134,Fresh Produce,Vegetables,DeFacto,329.03,431.51
+ART-00135,Bingo Batteries Item 135,Electronics,Batteries,Bingo,4146.1,5504.95
+ART-00136,Eti Detergents Item 136,Home Care,Detergents,Eti,196.2,252.16
+ART-00137,DeFacto Small Appliances Item 137,Electronics,Small Appliances,DeFacto,3374.12,4220.75
+ART-00138,Tamek Batteries Item 138,Electronics,Batteries,Tamek,2488.99,3127.29
+ART-00139,Bizim Cleaners Item 139,Home Care,Cleaners,Bizim,532.98,725.04
+ART-00140,Pinar Fresheners Item 140,Home Care,Fresheners,Pinar,329.31,397.58
+ART-00141,Arcelik Bath & Body Item 141,Personal Care,Bath & Body,Arcelik,466.38,569.96
+ART-00142,Arcelik Small Appliances Item 142,Electronics,Small Appliances,Arcelik,2296.06,2652.35
+ART-00143,Tukas Detergents Item 143,Home Care,Detergents,Tukas,427.4,530.77
+ART-00144,Arcelik Women Item 144,Apparel,Women,Arcelik,1749.72,2192.62
+ART-00145,Sutas Meat & Poultry Item 145,Fresh Produce,Meat & Poultry,Sutas,160.17,206.0
+ART-00146,Torku Cleaners Item 146,Home Care,Cleaners,Torku,107.57,129.92
+ART-00147,Tamek Frozen Item 147,Grocery,Frozen,Tamek,111.94,153.53
+ART-00148,LC Waikiki Fresheners Item 148,Home Care,Fresheners,LC Waikiki,586.9,767.31
+ART-00149,Sek Detergents Item 149,Home Care,Detergents,Sek,205.9,259.08
+ART-00150,Karaca Detergents Item 150,Home Care,Detergents,Karaca,110.89,129.04
+ART-00151,Mis Frozen Item 151,Grocery,Frozen,Mis,354.76,421.41
+ART-00152,Pinar Accessories Item 152,Electronics,Accessories,Pinar,2912.91,3760.04
+ART-00153,Tamek Batteries Item 153,Electronics,Batteries,Tamek,4830.94,5921.49
+ART-00154,Eti Accessories Item 154,Electronics,Accessories,Eti,2063.47,2418.85
+ART-00155,Ulker Meat & Poultry Item 155,Fresh Produce,Meat & Poultry,Ulker,86.14,120.02
+ART-00156,Torku Detergents Item 156,Home Care,Detergents,Torku,106.33,146.66
+ART-00157,DeFacto Kids Item 157,Apparel,Kids,DeFacto,831.92,1087.13
+ART-00158,Mis Batteries Item 158,Electronics,Batteries,Mis,4314.82,6243.59
+ART-00159,DeFacto Fresheners Item 159,Home Care,Fresheners,DeFacto,73.73,106.03
+ART-00160,Sek Snacks Item 160,Grocery,Snacks,Sek,147.03,172.67
+ART-00161,Karaca Haircare Item 161,Personal Care,Haircare,Karaca,106.3,122.33
+ART-00162,DeFacto Small Appliances Item 162,Electronics,Small Appliances,DeFacto,2402.57,2786.48
+ART-00163,Mis Fresheners Item 163,Home Care,Fresheners,Mis,433.67,557.79
+ART-00164,Bizim Fruits Item 164,Fresh Produce,Fruits,Bizim,321.5,430.01
+ART-00165,Bingo Fruits Item 165,Fresh Produce,Fruits,Bingo,72.47,88.23
+ART-00166,Komili Oral Care Item 166,Personal Care,Oral Care,Komili,103.56,124.25
+ART-00167,LC Waikiki Fresheners Item 167,Home Care,Fresheners,LC Waikiki,555.87,712.48
+ART-00168,Mis Small Appliances Item 168,Electronics,Small Appliances,Mis,3528.7,5055.93
+ART-00169,Arcelik Kids Item 169,Apparel,Kids,Arcelik,1425.72,1895.37
+ART-00170,Sutas Small Appliances Item 170,Electronics,Small Appliances,Sutas,3058.2,3540.66
+ART-00171,Bizim Skincare Item 171,Personal Care,Skincare,Bizim,482.19,664.91
+ART-00172,Vestel Bath & Body Item 172,Personal Care,Bath & Body,Vestel,538.63,767.45
+ART-00173,Arcelik Bath & Body Item 173,Personal Care,Bath & Body,Arcelik,776.79,1002.84
+ART-00174,Sutas Batteries Item 174,Electronics,Batteries,Sutas,3383.65,4761.88
+ART-00175,Arcelik Cleaners Item 175,Home Care,Cleaners,Arcelik,201.4,288.72
+ART-00176,Yumos Men Item 176,Apparel,Men,Yumos,446.57,547.37
+ART-00177,Vestel Dairy Item 177,Grocery,Dairy,Vestel,415.97,478.51
+ART-00178,Bingo Women Item 178,Apparel,Women,Bingo,351.77,459.25
+ART-00179,Yumos Women Item 179,Apparel,Women,Yumos,2327.97,2819.33
+ART-00180,Mis Men Item 180,Apparel,Men,Mis,1426.73,1939.6
+ART-00181,DeFacto Staples Item 181,Grocery,Staples,DeFacto,403.67,550.18
+ART-00182,Pinar Fresheners Item 182,Home Care,Fresheners,Pinar,349.26,411.42
+ART-00183,Dalan Dairy Item 183,Grocery,Dairy,Dalan,330.9,395.82
+ART-00184,Vestel Vegetables Item 184,Fresh Produce,Vegetables,Vestel,291.0,370.92
+ART-00185,Torku Batteries Item 185,Electronics,Batteries,Torku,2338.25,2790.45
+ART-00186,Eti Haircare Item 186,Personal Care,Haircare,Eti,485.77,356.72
+ART-00187,Vestel Batteries Item 187,Electronics,Batteries,Vestel,1409.15,1621.61
+ART-00188,LC Waikiki Vegetables Item 188,Fresh Produce,Vegetables,LC Waikiki,244.57,329.68
+ART-00189,Karaca Bath & Body Item 189,Personal Care,Bath & Body,Karaca,413.26,516.46
+ART-00190,Yumos Women Item 190,Apparel,Women,Yumos,2811.99,3967.38
+ART-00191,LC Waikiki Fruits Item 191,Fresh Produce,Fruits,LC Waikiki,171.7,241.55
+ART-00192,Sutas Accessories Item 192,Electronics,Accessories,Sutas,3749.06,5104.6
+ART-00193,Komili Batteries Item 193,Electronics,Batteries,Komili,2527.11,2934.24
+ART-00194,Sutas Kids Item 194,Apparel,Kids,Sutas,2635.16,3721.52
+ART-00195,Vestel Accessories Item 195,Electronics,Accessories,Vestel,4561.16,5266.33
+ART-00196,Komili Bath & Body Item 196,Personal Care,Bath & Body,Komili,106.12,146.92
+ART-00197,DeFacto Cleaners Item 197,Home Care,Cleaners,DeFacto,427.91,575.52
+ART-00198,Karaca Fresheners Item 198,Home Care,Fresheners,Karaca,252.81,314.75
+ART-00199,Karaca Vegetables Item 199,Fresh Produce,Vegetables,Karaca,43.28,50.66
+ART-00200,Mis Meat & Poultry Item 200,Fresh Produce,Meat & Poultry,Mis,399.05,548.31

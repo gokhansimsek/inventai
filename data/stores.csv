@@ -1,0 +1,6 @@
+store_id,store_name,city,region,store_type,opening_date,area_sqft
+S-001,Istanbul Supermarket,Istanbul,Marmara,Supermarket,2023-01-10,9506
+S-002,Ankara Hypermarket,Ankara,Central Anatolia,Hypermarket,2022-08-05,37174
+S-003,Izmir Supermarket,Izmir,Aegean,Supermarket,2022-12-27,6535
+S-004,Antalya Hypermarket,Antalya,Mediterranean,Hypermarket,2027-03-15,15869
+S-005,Bursa Supermarket,Bursa,Marmara,Supermarket,2019-03-27,11873
