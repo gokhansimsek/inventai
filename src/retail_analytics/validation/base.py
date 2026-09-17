@@ -1,10 +1,11 @@
 """Building blocks shared by every validation rule.
 
-A rule looks at one table and returns what survives, what was quarantined,
-and what was flagged for review. Rules never drop rows silently: anything
+A rule looks at one table (and may read the others) and returns what survives,
+what was quarantined, and what was flagged for review. Rules never drop rows silently: anything
 removed from ``data`` must appear in ``rejected``.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
@@ -41,11 +42,13 @@ class Rule(Protocol):
     severity: Severity
     description: str
 
-    def apply(self, df: pd.DataFrame) -> RuleResult:
+    def apply(self, df: pd.DataFrame, tables: Mapping[str, pd.DataFrame]) -> RuleResult:
         """Check a table and split its rows by outcome.
 
         Args:
             df (pd.DataFrame): The table as left by the previous rule.
+            tables (Mapping[str, pd.DataFrame]): Every table as validated so far, for
+                rules that check against another table.
 
         Returns:
             RuleResult: Rows that continue (possibly corrected), rows quarantined, rows

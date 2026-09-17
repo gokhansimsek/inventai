@@ -21,7 +21,9 @@ class RuleOutcome:
     table: str
     severity: Severity
     description: str
-    rows_affected: int
+    fixed: int
+    rejected: int
+    flagged: int
 
 
 @dataclass(frozen=True)
@@ -36,7 +38,10 @@ class ValidationOutcome:
 def validate(raw: Mapping[str, pd.DataFrame], rules: Sequence[Rule]) -> ValidationOutcome:
     """Apply rules in order and collect what they found for every table.
 
-    Each rule receives its table as left by the previous rule for that table.
+    Each rule receives its table as left by the previous rule for that table, plus
+    every table in its current state. Rules for master data (stores, articles) must
+    run before the rules that check references to them, so rows pointing at a
+    rejected master row are rejected too.
 
     Args:
         raw (Mapping[str, pd.DataFrame]): Raw tables keyed by table name.
@@ -52,17 +57,20 @@ def validate(raw: Mapping[str, pd.DataFrame], rules: Sequence[Rule]) -> Validati
     outcomes = []
 
     for rule in rules:
-        result = rule.apply(clean[rule.table])
+        result = rule.apply(clean[rule.table], clean)
         clean[rule.table] = result.data
         rejected[rule.table].append(result.rejected.assign(rule_id=rule.rule_id))
         flagged[rule.table].append(result.flagged.assign(rule_id=rule.rule_id))
-        affected = {
-            Severity.FIX: result.fixed_count,
-            Severity.REJECT: len(result.rejected),
-            Severity.FLAG: len(result.flagged),
-        }[rule.severity]
         outcomes.append(
-            RuleOutcome(rule.rule_id, rule.table, rule.severity, rule.description, affected)
+            RuleOutcome(
+                rule_id=rule.rule_id,
+                table=rule.table,
+                severity=rule.severity,
+                description=rule.description,
+                fixed=result.fixed_count,
+                rejected=len(result.rejected),
+                flagged=len(result.flagged),
+            )
         )
 
     rejected_tables = {t: _concat(frames) for t, frames in rejected.items()}

@@ -4,6 +4,8 @@ Dates stay as text here: the transactions file mixes date formats, and
 parsing them is a dedicated fix rule, not a type coercion.
 """
 
+from collections.abc import Mapping
+
 import pandas as pd
 import pandera.pandas as pa
 
@@ -45,7 +47,7 @@ SCHEMAS: dict[str, pa.DataFrameSchema] = {
             "selling_price": pa.Column(float),
             "currency": pa.Column(str),
             "discount_pct": pa.Column(float),
-            "customer_id": pa.Column(str),
+            "customer_id": pa.Column(str, nullable=True),
             "weather_condition": pa.Column(str),
         },
         coerce=True,
@@ -84,11 +86,12 @@ class CoerceToSchema:
         self.description = f"Every {table} value must parse as its column type."
         self._schema = SCHEMAS[table]
 
-    def apply(self, df: pd.DataFrame) -> RuleResult:
+    def apply(self, df: pd.DataFrame, tables: Mapping[str, pd.DataFrame]) -> RuleResult:
         """Convert text columns to their types, quarantining rows that fail to convert.
 
         Args:
             df (pd.DataFrame): The raw table, every column as ``str``.
+            tables (Mapping[str, pd.DataFrame]): Other tables; unused.
 
         Returns:
             RuleResult: Typed rows that parsed, and rejected rows with a ``reason`` naming

@@ -13,7 +13,7 @@ from retail_analytics.io.readers import load_raw_tables
 from retail_analytics.kpis.revenue import revenue_by
 from retail_analytics.reporting.report import Report
 from retail_analytics.reporting.writers import CsvWriter, HtmlWriter, Writer
-from retail_analytics.validation.engine import RowCounts, ValidationOutcome, validate
+from retail_analytics.validation.engine import RowCounts, RuleOutcome, ValidationOutcome, validate
 from retail_analytics.validation.registry import default_rules
 
 log = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 class RunResult:
     output_dir: Path
     row_counts: dict[str, RowCounts]
+    rule_outcomes: list[RuleOutcome]
     files_written: list[Path]
 
 
@@ -34,7 +35,8 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
         writers (list[Writer] | None): Output writers; None uses the CSV and HTML writers.
 
     Returns:
-        RunResult: Output folder, per-table row counts and every file written.
+        RunResult: Output folder, per-table row counts, what each rule did, and every
+            file written.
 
     Raises:
         InputDataError: If an input file is missing or structurally broken.
@@ -43,9 +45,16 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
     raw = load_raw_tables(settings.data_dir)
     log.info("Loaded raw tables: %s", {t: len(df) for t, df in raw.items()})
 
-    outcome = validate(raw, default_rules())
+    rules = default_rules(pd.Timestamp(settings.as_of), settings.price_tolerance)
+    outcome = validate(raw, rules)
     for rule in outcome.rule_outcomes:
-        log.info("Rule %s (%s): %d rows", rule.rule_id, rule.severity, rule.rows_affected)
+        log.info(
+            "Rule %s: fixed=%d rejected=%d flagged=%d",
+            rule.rule_id,
+            rule.fixed,
+            rule.rejected,
+            rule.flagged,
+        )
 
     sales = filter_sales(outcome.clean["transactions"], outcome.clean["stores"], settings)
     report = Report(
@@ -62,7 +71,7 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
         files.extend(writer.write(report, settings.output_dir))
     log.info("Wrote %d files to %s", len(files), settings.output_dir)
 
-    return RunResult(settings.output_dir, outcome.row_counts, files)
+    return RunResult(settings.output_dir, outcome.row_counts, outcome.rule_outcomes, files)
 
 
 def _row_counts_table(outcome: ValidationOutcome) -> pd.DataFrame:

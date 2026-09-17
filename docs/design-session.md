@@ -202,3 +202,19 @@ Each of these has an unsettled prerequisite in Round 1.
 
 After restart, run `/grill-me` and point it at this file. Answer Round 1, then
 the frontier recomputes and Round 2 opens.
+
+## Corrections found during implementation
+
+Recorded here rather than edited above, so the session stays as it happened.
+
+- **Duplicates (Day 2):** of the 143 repeated `transaction_id`s, only **138** are
+  exact copies. In the other **5**, the two rows differ only in the sign of
+  `quantity`. Decision (evidence-based refinement of Q3, not a reversal): exact
+  copies are quarantined first, on raw text; key conflicts are checked after
+  row-level validation, so the negative copy is quarantined by the quantity rule
+  and the valid sale is kept. Full figures: `docs/data-quality.md`.
+- **Counts after deduplication:** KRS rows 4,324 (not 4,345), missing customer ids
+  2,292 (not 2,299), day-first dates 1,396, unknown store `S-099` rows 115 once
+  negative quantities are removed.
+- **"Future" is relative to the run date** (`as_of`, default today), not a
+  hard-coded dataset month, so the rules stay valid for new data.
