@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retail Analytics Report</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 70rem; padding: 0 1rem; color: #1f2328; }
+  h1 { margin-bottom: 0.25rem; }
+  .meta { color: #656d76; margin-top: 0; }
+  section { margin-top: 2.5rem; }
+  table.data { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  table.data th, table.data td { padding: 0.35rem 0.8rem; border-bottom: 1px solid #d0d7de; text-align: right; }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>Retail Analytics Report</h1>
+<p class="meta">Generated {{ report.generated_at.strftime("%Y-%m-%d %H:%M") }}</p>
+
+<section>
+  <h2>Revenue by store</h2>
+  <div class="scroll">{{ table(report.kpis["revenue_by_store"]) | safe }}</div>
+</section>
+
+<section>
+  <h2>Data quality</h2>
+  <h3>Rows processed</h3>
+  <div class="scroll">{{ table(report.row_counts) | safe }}</div>
+  <h3>Rules applied</h3>
+  <div class="scroll">{{ table(report.data_quality) | safe }}</div>
+</section>
+</body>
+</html>

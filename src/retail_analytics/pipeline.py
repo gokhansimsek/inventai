@@ -1,0 +1,77 @@
+"""The run, end to end: load -> validate -> compute KPIs -> write report."""
+
+import logging
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
+
+from retail_analytics.config import Settings
+from retail_analytics.filters import filter_sales
+from retail_analytics.io.readers import load_raw_tables
+from retail_analytics.kpis.revenue import revenue_by
+from retail_analytics.reporting.report import Report
+from retail_analytics.reporting.writers import CsvWriter, HtmlWriter, Writer
+from retail_analytics.validation.engine import RowCounts, ValidationOutcome, validate
+from retail_analytics.validation.registry import default_rules
+
+log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class RunResult:
+    output_dir: Path
+    row_counts: dict[str, RowCounts]
+    files_written: list[Path]
+
+
+def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> RunResult:
+    """Run the whole pipeline: load, validate, filter, compute KPIs, write the report.
+
+    Args:
+        settings (Settings): Input and output locations and the analysis filters.
+        writers (list[Writer] | None): Output writers; None uses the CSV and HTML writers.
+
+    Returns:
+        RunResult: Output folder, per-table row counts and every file written.
+
+    Raises:
+        InputDataError: If an input file is missing or structurally broken.
+        ConfigError: If a filter names an unknown store.
+    """
+    raw = load_raw_tables(settings.data_dir)
+    log.info("Loaded raw tables: %s", {t: len(df) for t, df in raw.items()})
+
+    outcome = validate(raw, default_rules())
+    for rule in outcome.rule_outcomes:
+        log.info("Rule %s (%s): %d rows", rule.rule_id, rule.severity, rule.rows_affected)
+
+    sales = filter_sales(outcome.clean["transactions"], outcome.clean["stores"], settings)
+    report = Report(
+        generated_at=datetime.now(),
+        kpis={"revenue_by_store": revenue_by(sales, ["store_id"])},
+        data_quality=pd.DataFrame([asdict(r) for r in outcome.rule_outcomes]),
+        row_counts=_row_counts_table(outcome),
+        quarantine=outcome.rejected,
+        issues=outcome.flagged,
+    )
+
+    files = []
+    for writer in writers or [CsvWriter(), HtmlWriter()]:
+        files.extend(writer.write(report, settings.output_dir))
+    log.info("Wrote %d files to %s", len(files), settings.output_dir)
+
+    return RunResult(settings.output_dir, outcome.row_counts, files)
+
+
+def _row_counts_table(outcome: ValidationOutcome) -> pd.DataFrame:
+    """Flatten per-table row counts into one table for the report.
+
+    Args:
+        outcome (ValidationOutcome): The result of validating every table.
+
+    Returns:
+        pd.DataFrame: One row per table with ``raw``, ``clean`` and ``rejected`` counts.
+    """
+    return pd.DataFrame([{"table": t, **asdict(c)} for t, c in outcome.row_counts.items()])
