@@ -8,8 +8,11 @@ restated in JavaScript, so a filtered figure equals the figure the pipeline woul
 produce for the same selection.
 
 Where a rule rather than a formula decides grouping, the payload carries the answer
-too: ``weeks_by_day`` holds the Monday ``enrich_sales`` assigned to each day, so the
-page never works a week boundary out for itself.
+too: ``periods_by_day`` holds the Monday and the calendar month ``enrich_sales``
+assigned to each day, so the page never works a period boundary out for itself. It
+is also what keeps the page's filtering cheap: every fact row reads its week and
+month from that lookup instead of deriving them from a date, which is per-row work
+that grows with the data.
 
 Every measure here is additive over the grain it is stored at, except
 ``inventory_value``, which is averaged over weeks exactly as
@@ -47,7 +50,7 @@ def build_facts(
             with a parsed ``date``.
 
     Returns:
-        dict[str, pd.DataFrame]: Tables keyed ``sales``, ``weeks_by_day``,
+        dict[str, pd.DataFrame]: Tables keyed ``sales``, ``periods_by_day``,
             ``inventory``, ``reconcile``, ``returns``, ``stores`` and ``articles``.
     """
     sales = (
@@ -62,7 +65,7 @@ def build_facts(
     )
     return {
         "sales": sales,
-        "weeks_by_day": _weeks_by_day(enriched_sales),
+        "periods_by_day": _periods_by_day(enriched_sales),
         "inventory": _inventory_weeks(inventory, articles),
         "reconcile": sales_vs_inventory,
         "returns": _returns_days(quarantined_sales),
@@ -75,21 +78,23 @@ def build_facts(
     }
 
 
-def _weeks_by_day(enriched_sales: pd.DataFrame) -> pd.DataFrame:
-    """Map each day in the data to the Monday starting its week.
+def _periods_by_day(enriched_sales: pd.DataFrame) -> pd.DataFrame:
+    """Map each day in the data to the Monday starting its week and its calendar month.
 
-    ``enrich_sales`` decides where a week begins. The page groups by week too, so it
-    reads that decision from here instead of restating it in JavaScript, where it
-    could drift.
+    ``enrich_sales`` decides both. The page groups by week and by month too, so it
+    reads those decisions from here instead of restating them in JavaScript, where
+    they could drift. One row per day also means the page resolves a period with a
+    lookup per fact row rather than by building a date from it.
 
     Args:
-        enriched_sales (pd.DataFrame): Sales with ``day`` and ``week``, as
+        enriched_sales (pd.DataFrame): Sales with ``day``, ``week`` and ``month``, as
             ``kpis.sales.enrich_sales`` returns them.
 
     Returns:
-        pd.DataFrame: One row per day with ``day`` and ``week``, ordered by day.
+        pd.DataFrame: One row per day with ``day``, ``week`` and ``month``, ordered by
+            day.
     """
-    pairs = enriched_sales[["day", "week"]].drop_duplicates()
+    pairs = enriched_sales[["day", "week", "month"]].drop_duplicates()
     return pairs.sort_values("day", ignore_index=True)
 
 
@@ -168,7 +173,7 @@ def _first_day(facts: dict[str, pd.DataFrame]) -> pd.Timestamp:
     """
     starts = [
         facts["sales"]["day"],
-        facts["weeks_by_day"]["week"],
+        facts["periods_by_day"]["week"],
         facts["inventory"]["week"],
         facts["reconcile"]["week"],
         facts["returns"]["day"],
@@ -234,7 +239,7 @@ def facts_json(facts: dict[str, pd.DataFrame], top_n: int, min_units: int) -> st
     article_index = {value: i for i, value in enumerate(article_ids)}
 
     returns = facts["returns"]
-    weeks_by_day = facts["weeks_by_day"]
+    periods = facts["periods_by_day"]
     origin = _first_day(facts)
 
     def offsets(column: pd.Series) -> list[int]:
@@ -252,10 +257,10 @@ def facts_json(facts: dict[str, pd.DataFrame], top_n: int, min_units: int) -> st
         "origin": origin.strftime("%Y-%m-%d"),
         "topN": top_n,
         "minUnits": min_units,
-        # Day offset -> the offset of the Monday starting its week, from enrich_sales.
-        "weekOf": dict(
-            zip(offsets(weeks_by_day["day"]), offsets(weeks_by_day["week"]), strict=True)
-        ),
+        # Day offset -> the offset of the Monday starting its week, and -> its calendar
+        # month, both from enrich_sales. The page looks a day up rather than deriving it.
+        "weekOf": dict(zip(offsets(periods["day"]), offsets(periods["week"]), strict=True)),
+        "monthOf": dict(zip(offsets(periods["day"]), periods["month"], strict=True)),
         "stores": facts["stores"].to_dict("records"),
         "articles": facts["articles"].to_dict("records"),
         "sales": {

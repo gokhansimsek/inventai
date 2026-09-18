@@ -223,6 +223,33 @@ Kept up to date at each milestone rather than written at the end.
   gates. The first is churn in a signature that reads fine; the second would mean
   adding a JavaScript toolchain to a Python case study. Both raised, neither done.
 
+### 10. Scalability review of the report
+
+- I asked what happens to this design if the chain grows to Turkey-wide scale: 7 regions,
+  1,000 stores. The AI generated scaled copies of `data/` keeping the same defect mix and
+  rows-per-store, ran the real pipeline at 5, 50, 200 and 1,000 stores, timed every stage
+  and every rule, and measured a real filter change in a real browser.
+- **What it found.** The pipeline scales: nothing is quadratic, all 38 rules are
+  vectorised, and 5.8M transactions validate in ~90 s. The limit there is memory, not
+  time — reading every column as `dtype=str` costs ~740 bytes of RAM per 84-byte CSV row,
+  so a full year at 1,000 stores would not fit in 32 GB. The report is what breaks first:
+  127 MB, and 5.1 s per filter change.
+- **What I had it fix.** The page built a `Date` per fact row to find its week and month.
+  Reading both from the day lookup instead took a filter change from 5.1 s to 1.8 s, and
+  it is the same change ADR 0008's no-drift argument already wanted, so it was worth doing
+  at any size.
+- **The AI error I caught.** Its first measurement of the fix reported no improvement at
+  all. Its benchmark harness had its own copy of the aggregation loop rather than the
+  page's, so it had been measuring the old code either way. Measuring the real report in
+  a real browser gave the 5.1 s → 1.8 s above. A benchmark that does not run the code you
+  changed will happily tell you your change did nothing.
+- **Left alone deliberately.** Capping the per-store charts at a top-N would buy another
+  ~1.1 s, but it changes what the report shows, so it is raised rather than done. The
+  bigger items — dropping the article dimension from the page, chunked validation,
+  cheaper dtypes — are recorded in ADR 0008 and left unbuilt: `design-session.md` settles
+  that at 2 MB performance is irrelevant, and building for 1,000 stores in a case study
+  is exactly the over-investment that document warns against.
+
 ## Reflection
 
 To be completed at submission, with an honest AI / human ratio.

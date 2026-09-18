@@ -19,7 +19,9 @@ from retail_analytics.pipeline import run_pipeline
 DATA_DIR = Path(__file__).parents[1] / "data"
 
 # Independent expected values, printed by tools/profile_selections.py.
-# Turnover is (store name, ratio) in the order the report ranks them.
+# Turnover is (store name, ratio) in the order the report ranks them; weeks are
+# (Monday, units, revenue, margin %) and months (month, units, revenue, margin,
+# margin %), both in the order the report lists them.
 SELECTIONS = {
     "the whole month": {
         "margin": "10,301,980",
@@ -31,6 +33,16 @@ SELECTIONS = {
         "units": "53,846",
         "lines": "28,060",
         "returns": "1,179,763",
+        "weeks": [
+            ("2024-02-26", "5,703", "6,359,247", "18.0%"),
+            ("2024-03-04", "12,511", "13,283,864", "17.8%"),
+            ("2024-03-11", "12,554", "13,473,173", "18.5%"),
+            ("2024-03-18", "11,663", "11,896,144", "17.6%"),
+            ("2024-03-25", "11,415", "12,411,229", "17.8%"),
+        ],
+        "months": [
+            ("2024-03", "53,846", "57,423,657", "10,301,980", "17.9%"),
+        ],
         "turnover": [
             ("Izmir Supermarket", "0.99"),
             ("Bursa Supermarket", "0.90"),
@@ -49,6 +61,16 @@ SELECTIONS = {
         "units": "8,404",
         "lines": "4,428",
         "returns": "174,841",
+        "weeks": [
+            ("2024-02-26", "792", "807,910", "17.4%"),
+            ("2024-03-04", "1,883", "1,879,590", "18.7%"),
+            ("2024-03-11", "2,026", "2,082,852", "18.8%"),
+            ("2024-03-18", "1,852", "2,048,619", "18.1%"),
+            ("2024-03-25", "1,851", "1,952,693", "17.2%"),
+        ],
+        "months": [
+            ("2024-03", "8,404", "8,771,664", "1,590,395", "18.1%"),
+        ],
         "turnover": [("Istanbul Supermarket", "0.88")],
     },
     "one week": {
@@ -61,6 +83,12 @@ SELECTIONS = {
         "units": "12,511",
         "lines": "6,529",
         "returns": "303,274",
+        "weeks": [
+            ("2024-03-04", "12,511", "13,283,864", "17.8%"),
+        ],
+        "months": [
+            ("2024-03", "12,511", "13,283,864", "2,370,405", "17.8%"),
+        ],
         "turnover": [
             ("Istanbul Supermarket", "0.25"),
             ("Antalya Hypermarket", "0.24"),
@@ -79,6 +107,13 @@ SELECTIONS = {
         "units": "6,542",
         "lines": "3,378",
         "returns": "168,271",
+        "weeks": [
+            ("2024-03-11", "3,242", "3,579,498", "18.6%"),
+            ("2024-03-18", "3,300", "3,377,963", "18.3%"),
+        ],
+        "months": [
+            ("2024-03", "6,542", "6,957,461", "1,284,029", "18.5%"),
+        ],
         "turnover": [("Ankara Hypermarket", "0.41")],
     },
 }
@@ -200,6 +235,42 @@ def _turnover_rows(page: Page) -> list[tuple[str, str]]:
         "rows => rows.map(r => [r.cells[0].textContent, r.cells[5].textContent])",
     )
     return [(name, ratio) for name, ratio in rows]
+
+
+def _period_rows(page: Page, table: str) -> list[tuple[str, ...]]:
+    """Read a by-period table as one tuple of cell text per row, in the order shown.
+
+    Args:
+        page (Page): The loaded report.
+        table (str): The table's id, ``t-week`` or ``t-month``.
+
+    Returns:
+        list[tuple[str, ...]]: One tuple per row.
+    """
+    rows = page.eval_on_selector_all(
+        f"#{table} tbody tr",
+        "rows => rows.map(r => Array.from(r.cells).map(c => c.textContent))",
+    )
+    return [tuple(row) for row in rows]
+
+
+@pytest.mark.parametrize("name", list(SELECTIONS))
+def test_the_week_and_month_tables_match_the_independent_expected_values(
+    report_page: Page, name: str
+) -> None:
+    """The page groups a selection into weeks and months as the raw data does.
+
+    Both groupings are decided in Python and carried in the payload, so this is what
+    would catch the page deciding either for itself.
+
+    Args:
+        report_page (Page): The loaded report.
+        name (str): The selection to apply.
+    """
+    selection = SELECTIONS[name]
+    _apply(report_page, selection)
+    assert _period_rows(report_page, "t-week") == selection["weeks"]
+    assert _period_rows(report_page, "t-month") == selection["months"]
 
 
 @pytest.mark.parametrize("name", list(SELECTIONS))

@@ -4,7 +4,8 @@
 // report needs. Nothing here restates a KPI formula: it sums, subtracts, averages and
 // divides those measures, so a filtered figure equals the pipeline's for the same
 // selection. Where a rule rather than a formula decides grouping - which Monday starts
-// a week - the payload carries the answer Python worked out.
+// a week, which month a day belongs to - the payload carries the answer Python worked
+// out, which also keeps the per-row work in aggregate() to lookups and sums.
 (function () {
   var form = document.getElementById('filters');
   var node = document.getElementById('facts');
@@ -50,9 +51,11 @@
   }
 
   function selection() {
-    var live = chosen(storeBoxes);
+    // A Set of the live boxes, not indexOf per box: the payload indexes stores by their
+    // position in this list, so the two are walked together once rather than nested.
+    var live = new Set(chosen(storeBoxes));
     var stores = new Set();
-    storeBoxes.forEach(function (box, i) { if (live.indexOf(box) > -1) { stores.add(i); } });
+    storeBoxes.forEach(function (box, i) { if (live.has(box)) { stores.add(i); } });
     return { stores: stores, from: offsetOf(fromInput.value), to: offsetOf(toInput.value) };
   }
 
@@ -105,9 +108,11 @@
       add(bucket(articles, sales.a[i]), i, sales);
       add(bucket(cats, facts.articles[sales.a[i]].category), i, sales);
       add(bucket(days, d), i, sales);
-      // enrich_sales decided which Monday starts this day's week; the payload carries it.
+      // enrich_sales decided this day's week and month; the payload carries both. Read
+      // rather than derived: building a date per fact row is the one cost in this loop
+      // that grows with the data, and it dominated everything else at scale.
       add(bucket(weeks, facts.weekOf[d]), i, sales);
-      add(bucket(months, iso(dateOf(d)).slice(0, 7)), i, sales);
+      add(bucket(months, facts.monthOf[d]), i, sales);
     }
     var returns = { lines: 0, value: 0 };
     var quarantined = facts.returns;

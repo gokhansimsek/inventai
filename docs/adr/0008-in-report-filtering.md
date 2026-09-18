@@ -26,9 +26,10 @@ the answer Python worked out, for the same reason.
 - `store × day` carries possible returns, so that tile narrows with the rest.
 - `store × week` also carries the sales-against-inventory reconciliation, so that table
   narrows to the weeks turnover used.
-- A day → week lookup carries which Monday starts each day's week. `enrich_sales`
-  decides that; the page reads it rather than recomputing it from the date, which is
-  the one place a rule could otherwise have drifted.
+- A day → week and month lookup carries which Monday starts each day's week and which
+  calendar month it falls in. `enrich_sales` decides both; the page reads them rather
+  than recomputing them from the date, which is the one place a rule could otherwise
+  have drifted. It is also what keeps filtering cheap — see below.
 
 **The date controls span what the facts cover, not what the sales cover.** An inventory
 week counts towards turnover only when it lies entirely inside the range, so the last
@@ -66,10 +67,25 @@ Correctness is held by a new seam, agreed for this change and recorded in `CLAUD
 what is on screen with figures from `tools/profile_selections.py`, a standalone pandas
 script over `data/` that shares no code with the pipeline. Three independent routes —
 the pipeline, the page, and that script — agree on all four selections tested, for the
-six masthead measures and for inventory turnover per store. The unscripted page is
-checked too: with JavaScript off the filter bar is hidden and the server-rendered
-figures are the full-selection ones.
+six masthead measures, for the by-week and by-month tables, and for inventory turnover
+per store. The unscripted page is checked too: with JavaScript off the filter bar is
+hidden and the server-rendered figures are the full-selection ones.
 
 An undefined ratio — turnover with no inventory value, margin % with no revenue — prints
 as an em dash on both sides. Python produced `inf` or `nan` and the page produced `0.00`,
 which disagreed about a figure that has no value.
+
+**What this costs at a size we do not have.** `design-session.md` settles that 2 MB of
+CSV makes performance irrelevant, and it does — the whole pipeline runs in 0.7 s. But the
+page's cost is per fact row and per store, so it is worth knowing where it stops working.
+Measured on generated data with the same defect mix, at 1,000 stores over 7 regions
+(5.8M transactions, a 127 MB report): a filter change took 5.1 s, of which about 90% of
+the aggregation was building a `Date` per fact row to find its week and month. Reading
+both from the day lookup instead — the same change the drift argument above already
+wanted — brought a filter change to 1.8 s. Of what is left, roughly 1.1 s is Plotly
+relaying out one bar per store: three charts, 34,000 px tall. Capping those at a top-N
+would be the next thing to do, and it changes what the report shows, so it is not done
+here. Beyond that the grain itself is the limit: `store × article × day` compresses
+28,060 rows into 10,789 today (2.6:1) but 5.7M into 3.7M at 1,000 stores (1.5:1), because
+a fact row approaches one per transaction as cardinality grows. At that size the article
+dimension would have to leave the page, which is a different decision from this one.

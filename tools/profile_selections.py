@@ -129,6 +129,39 @@ def _within(rows: pd.DataFrame, stores: list[str], first: str, last: str) -> pd.
     return rows[keep]
 
 
+def _by_period(window: pd.DataFrame, period: str) -> pd.DataFrame:
+    """Total units, revenue and margin per week or per calendar month of a selection.
+
+    The report groups the same rows both ways, so this re-derives the grouping from the
+    transaction date rather than from anything the pipeline computed. A week is labelled
+    by the Monday starting it, as ``docs/design-session.md`` settles.
+
+    Args:
+        window (pd.DataFrame): Priced rows inside a selection, with ``date``,
+            ``quantity``, ``revenue`` and ``cost``.
+        period (str): ``"week"`` or ``"month"``.
+
+    Returns:
+        pd.DataFrame: One row per period with ``period`` (``YYYY-MM-DD`` for a week,
+            ``YYYY-MM`` for a month), ``units``, ``revenue``, ``margin`` and
+            ``margin_pct``, earliest period first.
+    """
+    day = window["date"].dt.normalize()
+    label = (
+        (day - pd.to_timedelta(day.dt.weekday, unit="D")).dt.strftime("%Y-%m-%d")
+        if period == "week"
+        else day.dt.to_period("M").astype(str)
+    )
+    totals = (
+        window.assign(period=label)
+        .groupby("period", as_index=False)
+        .agg(units=("quantity", "sum"), revenue=("revenue", "sum"), cost=("cost", "sum"))
+    )
+    totals["margin"] = totals["revenue"] - totals["cost"]
+    totals["margin_pct"] = totals["margin"] / totals["revenue"]
+    return totals.sort_values("period", ignore_index=True)
+
+
 def _turnover(stores: list[str], first: str, last: str) -> pd.DataFrame:
     """Compute inventory turnover per store for a selection.
 
@@ -209,6 +242,17 @@ def main() -> None:
         print(f"  units      {window['quantity'].sum():>16,}")
         print(f"  lines      {len(window):>16,}")
         print(f"  returns    {abs(returned['revenue'].sum()):>16,.0f}")
+        for week in _by_period(window, "week").itertuples():
+            print(
+                f"  week       {week.period} units {week.units:>8,} "
+                f"revenue {week.revenue:>14,.0f} margin_pct {week.margin_pct:>7.1%}"
+            )
+        for month in _by_period(window, "month").itertuples():
+            print(
+                f"  month      {month.period} units {month.units:>8,} "
+                f"revenue {month.revenue:>14,.0f} margin {month.margin:>13,.0f} "
+                f"margin_pct {month.margin_pct:>7.1%}"
+            )
         turnover = _turnover(stores, first, last)
         if turnover.empty:
             print("  turnover   (no whole inventory week in range)")
