@@ -12,16 +12,30 @@ with the tested Python.
 
 **Decision.** The page filters, but it never restates a formula. Python computes every
 measure per row and groups it to the finest grain the report needs
-(`reporting/cube.py`); the page only sums, averages and divides those measures.
+(`reporting/cube.py`); the page only sums, subtracts, averages and divides those
+measures. Where a *rule* rather than a formula decides grouping, the payload carries
+the answer Python worked out, for the same reason.
 
 - `store × article × day` carries units, revenue, cost and line count. Revenue and cost
-  are already after discount and at purchase price, so every sales KPI is a sum, and
-  margin % is a ratio of sums.
+  are already after discount and at purchase price, so every sales KPI is a sum, gross
+  margin is one subtraction of two sums, and margin % is a ratio of sums.
 - `store × week` carries cost of goods sold and inventory value. Turnover picks the
   weeks lying entirely inside the range — the rule from
   [0004](0004-inventory-turnover-from-inventory-file.md) — then divides summed COGS by
   mean weekly value, as `kpis.inventory.inventory_turnover` does.
 - `store × day` carries possible returns, so that tile narrows with the rest.
+- `store × week` also carries the sales-against-inventory reconciliation, so that table
+  narrows to the weeks turnover used.
+- A day → week lookup carries which Monday starts each day's week. `enrich_sales`
+  decides that; the page reads it rather than recomputing it from the date, which is
+  the one place a rule could otherwise have drifted.
+
+**The date controls span what the facts cover, not what the sales cover.** An inventory
+week counts towards turnover only when it lies entirely inside the range, so the last
+selectable day reaches the end of the last inventory week rather than the last sale
+(`cube.date_bounds`). Otherwise, on a run whose range ended after the last clean sale,
+the page's own full selection would drop a week the server-rendered report included, and
+Reset would disagree with the figures it replaced.
 
 Stores and regions are both multi-select dropdowns — a disclosure button over a
 checkbox list, with All and None — rather than native `<select multiple>` listboxes,
@@ -47,7 +61,15 @@ still one self-contained offline file. The CLI filters keep their meaning: they 
 what the report covers, and the in-page controls narrow within it. With scripting off
 the filter bar is hidden and the server-rendered full-selection report remains correct.
 
-Correctness is held by a new seam, agreed for this change: `tests/test_report_filters.py`
-drives the real controls in a real browser and compares what is on screen with figures
-from a standalone pandas script over `data/`, not from the pipeline. Three independent
-routes — the pipeline, the page, and that script — agree on all four selections tested.
+Correctness is held by a new seam, agreed for this change and recorded in `CLAUDE.md`:
+`tests/test_report_filters.py` drives the real controls in a real browser and compares
+what is on screen with figures from `tools/profile_selections.py`, a standalone pandas
+script over `data/` that shares no code with the pipeline. Three independent routes —
+the pipeline, the page, and that script — agree on all four selections tested, for the
+six masthead measures and for inventory turnover per store. The unscripted page is
+checked too: with JavaScript off the filter bar is hidden and the server-rendered
+figures are the full-selection ones.
+
+An undefined ratio — turnover with no inventory value, margin % with no revenue — prints
+as an em dash on both sides. Python produced `inf` or `nan` and the page produced `0.00`,
+which disagreed about a figure that has no value.

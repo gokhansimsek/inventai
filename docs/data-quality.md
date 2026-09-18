@@ -2,7 +2,9 @@
 
 What the pipeline checks, what it found in the provided data, and how each issue
 is handled. Every figure below comes from a pipeline run on `data/` and is
-confirmed by an independent pandas profile (see `tests/test_pipeline.py`).
+confirmed by an independent pandas profile (see `tests/test_pipeline.py`, and
+`tools/profile_selections.py`, which re-derives the report's figures from the raw
+CSVs by applying the rules as this document states them).
 
 ## How issues are handled
 
@@ -42,7 +44,7 @@ instead: no number computed from it could be trusted.
 | Dates in `DD-MM-YYYY` | 1,396 | Fix | Read as day-first: many have a first part above 12 and none has a second part above 12. |
 | Dates in the future (2027) | 15 | Fix + Flag | Transaction ids increase with date across all 28,875 other rows, so each takes the date of the preceding id (all become 2024-03-31). Flagged with the original date. If ids were not in date order, these rows would be quarantined instead. The 15 rows are also all `Sunny` with no discount, which suggests injected records. |
 | Prices in kurus (`KRS`) | 4,324 | Fix | KRS prices are exactly 100x TRY prices for the same articles; divided by 100. |
-| Quantity zero or negative | 577 | Reject | Values -1 to -5. They may be returns, but nothing links them to an original sale; reported as possible returns. |
+| Quantity zero or negative | 577 | Reject | Values -1 to -5. They may be returns, but nothing links them to an original sale; reported as possible returns. One of the 577 is also for the unknown store `S-099`: the quantity check runs first, so the row is quarantined here, but rows for unknown stores are excluded from possible returns by design, so every figure covers the same stores ([assumptions](assumptions.md#sales)). The tile therefore totals the other 576, worth 1,179,763 TRY; this row stays in `quarantine/transactions.csv` with its reason. |
 | Unknown store `S-099` | 115 | Reject | Not in `stores.csv`. |
 
 ### Stores

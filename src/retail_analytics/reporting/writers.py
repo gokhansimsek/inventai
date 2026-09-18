@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from html import escape
+from math import isfinite
 from pathlib import Path
 from typing import Protocol
 
@@ -93,6 +94,7 @@ class HtmlWriter:
         """
         path = out_dir / "report.html"
         path.parent.mkdir(parents=True, exist_ok=True)
+        date_min, date_max = cube.date_bounds(report.facts) if report.has_sales else ("", "")
         html = self._env.get_template("report.html.j2").render(
             report=report,
             charts=_charts(report) if report.has_sales else {},
@@ -112,8 +114,8 @@ class HtmlWriter:
             if report.has_sales
             else "",
             regions=sorted(report.facts["stores"]["region"].unique()),
-            date_min=_bound(report, "min"),
-            date_max=_bound(report, "max"),
+            date_min=date_min,
+            date_max=date_max,
         )
         path.write_text(html, encoding="utf-8")
         return [path]
@@ -183,23 +185,6 @@ def _turnover_period(weeks: list[pd.Timestamp]) -> str:
     return f"{weeks[0]:%Y-%m-%d} to {last_day:%Y-%m-%d}"
 
 
-def _bound(report: Report, edge: str) -> str:
-    """Give the first or last day the filter controls may be set to.
-
-    Args:
-        report (Report): The report content, whose sales facts carry every selected day.
-        edge (str): ``"min"`` for the first day, ``"max"`` for the last.
-
-    Returns:
-        str: The day as ``YYYY-MM-DD``; empty when the selection holds no sales.
-    """
-    days = report.facts["sales"]["day"]
-    if days.empty:
-        return ""
-    day = days.min() if edge == "min" else days.max()
-    return str(day.strftime("%Y-%m-%d"))
-
-
 def _quality_summary(report: Report) -> dict[str, int]:
     """Total what validation did, for the data-quality tiles and the reconciliation line.
 
@@ -219,6 +204,9 @@ def _quality_summary(report: Report) -> dict[str, int]:
         "clean": int(report.row_counts["clean"].sum()),
     }
 
+
+# Shown wherever a ratio has no value, so the page can say exactly the same thing.
+UNDEFINED = "—"
 
 SEVERITY_STATUS = {"fix": "good", "flag": "warning", "reject": "critical"}
 
@@ -364,7 +352,7 @@ def _formatter(values: pd.Series) -> Callable[[object], str]:
     if column.endswith("_pct"):
         return lambda v: _percent(float(v))  # type: ignore[arg-type]
     if column == "turnover":
-        return lambda v: f"{float(v):.2f}"  # type: ignore[arg-type]
+        return lambda v: _turnover_value(float(v))  # type: ignore[arg-type]
     if pd.api.types.is_datetime64_any_dtype(values):
         return lambda v: f"{v:%Y-%m-%d}"
     if pd.api.types.is_integer_dtype(values):
@@ -391,6 +379,20 @@ def _percent(value: float) -> str:
         value (float): A fraction, e.g. 0.1794.
 
     Returns:
-        str: E.g. ``"17.9%"``.
+        str: E.g. ``"17.9%"``; an em dash when the ratio has no value, which happens
+            when its denominator is zero.
     """
-    return f"{value:.1%}"
+    return f"{value:.1%}" if isfinite(value) else UNDEFINED
+
+
+def _turnover_value(value: float) -> str:
+    """Format a turnover ratio with two decimals.
+
+    Args:
+        value (float): Cost of goods sold over average inventory value.
+
+    Returns:
+        str: E.g. ``"0.88"``; an em dash when average inventory value is zero, so the
+            page and the pipeline say the same thing about an undefined ratio.
+    """
+    return f"{value:.2f}" if isfinite(value) else UNDEFINED

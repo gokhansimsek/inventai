@@ -1,0 +1,408 @@
+// Re-aggregates the pre-computed facts for the current selection.
+//
+// Every measure was computed per row in Python and grouped to the finest grain the
+// report needs. Nothing here restates a KPI formula: it sums, subtracts, averages and
+// divides those measures, so a filtered figure equals the pipeline's for the same
+// selection. Where a rule rather than a formula decides grouping - which Monday starts
+// a week - the payload carries the answer Python worked out.
+(function () {
+  var form = document.getElementById('filters');
+  var node = document.getElementById('facts');
+  if (!form || !node) { return; }
+  var facts = JSON.parse(node.textContent);
+  var DAY = 86400000;
+  var UNDEFINED = '—';
+  var parts = facts.origin.split('-');
+  var ORIGIN = Date.UTC(+parts[0], +parts[1] - 1, +parts[2]);
+
+  function dateOf(offset) { return new Date(ORIGIN + offset * DAY); }
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  function offsetOf(text) {
+    var p = text.split('-');
+    return Math.round((Date.UTC(+p[0], +p[1] - 1, +p[2]) - ORIGIN) / DAY);
+  }
+  var money = function (v) { return v.toLocaleString('en-US', { maximumFractionDigits: 0 }); };
+  var count = function (v) { return v.toLocaleString('en-US'); };
+  // An undefined ratio prints as an em dash, exactly as the Python writers print it.
+  var pct = function (v) { return isFinite(v) ? (v * 100).toFixed(1) + '%' : UNDEFINED; };
+  var turn = function (v) { return isFinite(v) ? v.toFixed(2) : UNDEFINED; };
+
+  var fromInput = document.getElementById('f-from');
+  var toInput = document.getElementById('f-to');
+  var regionBoxes = Array.prototype.slice.call(
+    document.querySelectorAll('#f-region input[data-region]'));
+  var storeBoxes = Array.prototype.slice.call(
+    document.querySelectorAll('#f-store input[data-store]'));
+  var regionLabel = function (b) { return b.dataset.region; };
+  var storeLabel = function (b) { return b.parentNode.textContent.trim(); };
+
+  // A box counts when it is ticked and not greyed out by the other filter.
+  function chosen(boxes) {
+    return boxes.filter(function (b) { return b.checked && !b.disabled; });
+  }
+  function syncStoresToRegions() {
+    var regions = chosen(regionBoxes).map(regionLabel);
+    storeBoxes.forEach(function (box) {
+      var off = regions.indexOf(box.dataset.storeRegion) === -1;
+      box.disabled = off;
+      box.parentNode.classList.toggle('off', off);
+    });
+  }
+
+  function selection() {
+    var live = chosen(storeBoxes);
+    var stores = new Set();
+    storeBoxes.forEach(function (box, i) { if (live.indexOf(box) > -1) { stores.add(i); } });
+    return { stores: stores, from: offsetOf(fromInput.value), to: offsetOf(toInput.value) };
+  }
+
+  // The dropdown button names the selection briefly; the line under the filter bar
+  // spells it out. Both count the same way.
+  function summaryText(on, boxes, noun, labelOf) {
+    if (on.length === 0) { return 'No ' + noun; }
+    if (on.length === boxes.length) { return 'All ' + noun; }
+    return on.length === 1 ? labelOf(on[0]) : on.length + ' of ' + boxes.length + ' ' + noun;
+  }
+  function listText(on, boxes, labelOf) {
+    if (on.length === 0) { return 'none'; }
+    return on.length === boxes.length ? 'all' : on.map(labelOf).join(', ');
+  }
+  function showSummary(boxes, id, noun, labelOf) {
+    var on = chosen(boxes);
+    document.getElementById(id).textContent = summaryText(on, boxes, noun, labelOf);
+    return on;
+  }
+
+  // --- Aggregation -----------------------------------------------------------
+  function bucket(map, key) {
+    var b = map.get(key);
+    if (!b) { b = { key: key, lines: 0, units: 0, revenue: 0, cost: 0 }; map.set(key, b); }
+    return b;
+  }
+  function add(b, i, sales) {
+    b.lines += sales.n[i]; b.units += sales.u[i];
+    b.revenue += sales.r[i]; b.cost += sales.c[i];
+  }
+  function finish(b) {
+    b.margin = b.revenue - b.cost;
+    // No revenue means the margin share has no value; NaN prints as an em dash.
+    b.marginPct = b.revenue ? b.margin / b.revenue : NaN;
+    return b;
+  }
+  function byRevenue(a, b) { return b.revenue - a.revenue; }
+  function byMarginPct(a, b) { return b.marginPct - a.marginPct; }
+
+  function aggregate(sel) {
+    var sales = facts.sales;
+    var total = { lines: 0, units: 0, revenue: 0, cost: 0 };
+    var stores = new Map(), cats = new Map(), days = new Map(), weeks = new Map(),
+        months = new Map(), articles = new Map();
+    for (var i = 0; i < sales.d.length; i++) {
+      var d = sales.d[i];
+      if (d < sel.from || d > sel.to || !sel.stores.has(sales.s[i])) { continue; }
+      add(total, i, sales);
+      add(bucket(stores, sales.s[i]), i, sales);
+      add(bucket(articles, sales.a[i]), i, sales);
+      add(bucket(cats, facts.articles[sales.a[i]].category), i, sales);
+      add(bucket(days, d), i, sales);
+      // enrich_sales decided which Monday starts this day's week; the payload carries it.
+      add(bucket(weeks, facts.weekOf[d]), i, sales);
+      add(bucket(months, iso(dateOf(d)).slice(0, 7)), i, sales);
+    }
+    var returns = { lines: 0, value: 0 };
+    var quarantined = facts.returns;
+    for (var j = 0; j < quarantined.d.length; j++) {
+      if (quarantined.d[j] < sel.from || quarantined.d[j] > sel.to
+          || !sel.stores.has(quarantined.s[j])) { continue; }
+      returns.lines += quarantined.n[j]; returns.value += quarantined.v[j];
+    }
+    var list = function (m) { return Array.from(m.values()).map(finish); };
+    return {
+      total: finish(total), returns: returns,
+      stores: list(stores).sort(byRevenue), categories: list(cats).sort(byRevenue),
+      days: list(days).sort(function (a, b) { return a.key - b.key; }),
+      weeks: list(weeks).sort(function (a, b) { return a.key - b.key; }),
+      months: list(months).sort(function (a, b) { return a.key < b.key ? -1 : 1; }),
+      // Ranking sorts a revenue-ordered list, matching rank_articles' stable sort.
+      articles: list(articles).sort(byRevenue),
+    };
+  }
+
+  // --- Rendering -------------------------------------------------------------
+  function table(id, columns, rows) {
+    var host = document.getElementById(id);
+    if (!host) { return; }
+    var head = columns.map(function (c) {
+      return '<th class="' + (c.text ? 'text' : 'num') + '">' + c.label + '</th>';
+    }).join('');
+    var body = rows.map(function (row) {
+      return '<tr>' + columns.map(function (c) {
+        return '<td class="' + (c.text ? 'text' : 'num') + '">' + c.get(row) + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    host.innerHTML = '<table class="data"><thead><tr>' + head + '</tr></thead><tbody>'
+      + body + '</tbody></table>';
+  }
+
+  function plot(id) {
+    var host = document.getElementById(id);
+    return host ? host.querySelector('.js-plotly-plot') : null;
+  }
+  function bars(id, labels, values) {
+    var div = plot(id);
+    if (!div || !window.Plotly) { return; }
+    var low = Math.min.apply(null, [0].concat(values));
+    var high = Math.max.apply(null, [0].concat(values));
+    var height = labels.length * 34 + 70;
+    Plotly.restyle(div, { x: [values], y: [labels] });
+    // The outer div keeps the inline height of the first render, so a shorter chart
+    // would leave dead space below it; set it alongside the layout height.
+    div.style.height = height + 'px';
+    Plotly.relayout(div, { height: height, 'xaxis.range': [low * 1.22, high * 1.22] });
+  }
+  function line(id, x, y) {
+    var div = plot(id);
+    if (!div || !window.Plotly) { return; }
+    Plotly.restyle(div, { x: [x], y: [y] });
+  }
+
+  // One descriptor per measure, shared by every table that shows it, so a table gains
+  // or loses a column by naming it rather than by repeating its formatting.
+  var COLUMN = {
+    transactions: { label: 'Transactions', get: function (r) { return count(r.lines); } },
+    units: { label: 'Units', get: function (r) { return count(r.units); } },
+    revenue: { label: 'Revenue (TRY)', get: function (r) { return money(r.revenue); } },
+    cost: { label: 'Cost (TRY)', get: function (r) { return money(r.cost); } },
+    margin: { label: 'Gross margin (TRY)', get: function (r) { return money(r.margin); } },
+    marginPct: { label: 'Gross margin %', get: function (r) { return pct(r.marginPct); } },
+  };
+  var storeName = function (r) { return facts.stores[r.key].store_name; };
+  var storeRegion = function (r) { return facts.stores[r.key].region; };
+
+  var articleColumns = [
+    { label: 'Rank', get: function (r) { return r.rank; } },
+    { label: 'Article', text: true, get: function (r) { return r.article_id; } },
+    { label: 'Article name', text: true, get: function (r) { return r.article_name; } },
+    { label: 'Category', text: true, get: function (r) { return r.category; } },
+    COLUMN.units, COLUMN.revenue, COLUMN.margin, COLUMN.marginPct,
+  ];
+
+  function ranked(rows, measure, highestFirst) {
+    var sorted = rows.slice().sort(function (a, b) {
+      return highestFirst ? measure(b) - measure(a) : measure(a) - measure(b);
+    });
+    return sorted.slice(0, facts.topN).map(function (row, i) {
+      var article = facts.articles[row.key];
+      return {
+        rank: i + 1, article_id: article.article_id, article_name: article.article_name,
+        category: article.category, units: row.units, revenue: row.revenue,
+        margin: row.margin, marginPct: row.marginPct,
+      };
+    });
+  }
+
+  function render(sel) {
+    var totals = aggregate(sel);
+    var empty = totals.total.lines === 0;
+    document.getElementById('no-match').hidden = !empty;
+
+    document.getElementById('m-revenue').textContent = empty ? UNDEFINED
+      : money(totals.total.revenue);
+    document.getElementById('m-lines').textContent = count(totals.total.lines);
+    document.getElementById('m-margin-pct').textContent = pct(totals.total.marginPct);
+    document.getElementById('m-margin').textContent = money(totals.total.margin);
+    document.getElementById('m-units').textContent = count(totals.total.units);
+    document.getElementById('m-stores').textContent = 'across ' + totals.stores.length
+      + ' store' + (totals.stores.length === 1 ? '' : 's');
+    document.getElementById('m-returns').textContent = money(totals.returns.value);
+    document.getElementById('m-return-lines').textContent = count(totals.returns.lines);
+
+    var regionsOn = showSummary(regionBoxes, 'f-region-summary', 'regions', regionLabel);
+    var storesOn = showSummary(storeBoxes, 'f-store-summary', 'stores', storeLabel);
+    document.getElementById('selection').textContent =
+      'Stores: ' + listText(storesOn, storeBoxes, storeLabel)
+      + ' · Regions: ' + listText(regionsOn, regionBoxes, regionLabel)
+      + ' · Dates: ' + fromInput.value + ' to ' + toInput.value;
+
+    table('t-store', [
+      { label: 'Store name', text: true, get: storeName },
+      { label: 'Region', text: true, get: storeRegion },
+      COLUMN.transactions, COLUMN.units, COLUMN.revenue, COLUMN.cost,
+      COLUMN.margin, COLUMN.marginPct,
+    ], totals.stores);
+    table('t-category', [
+      { label: 'Category', text: true, get: function (r) { return r.key; } },
+      COLUMN.transactions, COLUMN.units, COLUMN.revenue, COLUMN.cost,
+      COLUMN.margin, COLUMN.marginPct,
+    ], totals.categories);
+    table('t-week', [
+      { label: 'Week', text: true, get: function (r) { return iso(dateOf(r.key)); } },
+      COLUMN.units, COLUMN.revenue, COLUMN.marginPct,
+    ], totals.weeks);
+    table('t-month', [
+      { label: 'Month', text: true, get: function (r) { return r.key; } },
+      COLUMN.units, COLUMN.revenue, COLUMN.margin, COLUMN.marginPct,
+    ], totals.months);
+
+    var eligible = totals.articles.filter(function (r) { return r.units >= facts.minUnits; });
+    var measures = {
+      revenue: [totals.articles, function (r) { return r.revenue; }],
+      margin_try: [totals.articles, function (r) { return r.margin; }],
+      margin_pct: [eligible, function (r) { return r.marginPct; }],
+    };
+    Object.keys(measures).forEach(function (name) {
+      var rows = measures[name][0], measure = measures[name][1];
+      table('t-top_by_' + name, articleColumns, ranked(rows, measure, true));
+      table('t-bottom_by_' + name, articleColumns, ranked(rows, measure, false));
+    });
+
+    var storeMargin = totals.stores.slice().sort(byMarginPct);
+    var catMargin = totals.categories.slice().sort(byMarginPct);
+    var categoryName = function (r) { return r.key; };
+    var revenueOf = function (r) { return r.revenue; };
+    var marginPctOf = function (r) { return r.marginPct; };
+    bars('c-store-revenue', totals.stores.map(storeName), totals.stores.map(revenueOf));
+    bars('c-store-margin', storeMargin.map(storeName), storeMargin.map(marginPctOf));
+    bars('c-cat-revenue', totals.categories.map(categoryName), totals.categories.map(revenueOf));
+    bars('c-cat-margin', catMargin.map(categoryName), catMargin.map(marginPctOf));
+    line('c-day', totals.days.map(function (r) { return iso(dateOf(r.key)); }),
+      totals.days.map(revenueOf));
+
+    renderInventory(sel);
+  }
+
+  function renderInventory(sel) {
+    var inventory = facts.inventory, perStore = new Map(), used = new Set();
+    for (var i = 0; i < inventory.w.length; i++) {
+      // A week counts only when it lies entirely inside the range, as inventory_turnover
+      // does. The date controls reach the end of the last week, so the page's own full
+      // selection uses every week the server-rendered report used.
+      if (inventory.w[i] < sel.from || inventory.w[i] + 6 > sel.to
+          || !sel.stores.has(inventory.s[i])) { continue; }
+      var b = perStore.get(inventory.s[i]);
+      if (!b) {
+        b = { key: inventory.s[i], weeks: 0, cogs: 0, value: 0 };
+        perStore.set(inventory.s[i], b);
+      }
+      b.weeks += 1; b.cogs += inventory.cogs[i]; b.value += inventory.value[i];
+      used.add(inventory.w[i]);
+    }
+    var rows = Array.from(perStore.values()).map(function (b) {
+      b.avg = b.weeks ? b.value / b.weeks : NaN;
+      b.turnover = b.avg ? b.cogs / b.avg : NaN;
+      return b;
+    }).sort(function (x, y) { return y.turnover - x.turnover; });
+
+    document.getElementById('turnover-empty').hidden = rows.length > 0;
+    document.getElementById('turnover-body').hidden = rows.length === 0;
+    if (!rows.length) { return; }
+
+    var weeks = Array.from(used).sort(function (x, y) { return x - y; });
+    document.getElementById('turnover-period').textContent =
+      iso(dateOf(weeks[0])) + ' to ' + iso(dateOf(weeks[weeks.length - 1] + 6));
+    document.getElementById('turnover-weeks').textContent =
+      weeks.length + ' week' + (weeks.length === 1 ? '' : 's');
+
+    table('t-turnover', [
+      { label: 'Store name', text: true, get: storeName },
+      { label: 'Region', text: true, get: storeRegion },
+      { label: 'Weeks', get: function (r) { return r.weeks; } },
+      { label: 'COGS (TRY)', get: function (r) { return money(r.cogs); } },
+      { label: 'Avg inventory (TRY)', get: function (r) { return money(r.avg); } },
+      { label: 'Turnover', get: function (r) { return turn(r.turnover); } },
+    ], rows);
+    bars('c-turnover', rows.map(storeName), rows.map(function (r) { return r.turnover; }));
+
+    var reconcile = facts.reconcile, pairs = [];
+    for (var j = 0; j < reconcile.w.length; j++) {
+      if (!used.has(reconcile.w[j]) || !sel.stores.has(reconcile.s[j])) { continue; }
+      pairs.push({
+        store: facts.stores[reconcile.s[j]].store_id, week: reconcile.w[j],
+        articles: reconcile.articles[j], sold: reconcile.sold[j], units: reconcile.units[j],
+      });
+    }
+    pairs.sort(function (x, y) {
+      return x.store < y.store ? -1 : x.store > y.store ? 1 : x.week - y.week;
+    });
+    table('t-reconcile', [
+      { label: 'Store', text: true, get: function (r) { return r.store; } },
+      { label: 'Week', text: true, get: function (r) { return iso(dateOf(r.week)); } },
+      { label: 'Articles', get: function (r) { return count(r.articles); } },
+      { label: 'Sold per inventory', get: function (r) { return count(r.sold); } },
+      { label: 'Units per transactions', get: function (r) { return count(r.units); } },
+      { label: 'Difference', get: function (r) { return count(r.units - r.sold); } },
+    ], pairs);
+  }
+
+  // --- The two dropdowns ------------------------------------------------------
+  function openMenu(root, open) {
+    root.querySelector('.multi-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+    root.querySelector('.multi-menu').hidden = !open;
+  }
+  ['f-region', 'f-store'].forEach(function (id) {
+    var root = document.getElementById(id);
+    var toggle = root.querySelector('.multi-toggle');
+    toggle.addEventListener('click', function () {
+      var open = toggle.getAttribute('aria-expanded') === 'true';
+      document.querySelectorAll('.multi').forEach(function (other) { openMenu(other, false); });
+      openMenu(root, !open);
+    });
+    root.querySelector('[data-all]').addEventListener('click', function () {
+      root.querySelectorAll('input[type="checkbox"]').forEach(function (b) { b.checked = true; });
+      changed();
+    });
+    root.querySelector('[data-none]').addEventListener('click', function () {
+      root.querySelectorAll('input[type="checkbox"]').forEach(function (b) { b.checked = false; });
+      changed();
+    });
+    root.addEventListener('change', function (event) {
+      if (event.target.type === 'checkbox') { changed(); }
+    });
+  });
+  document.addEventListener('click', function (event) {
+    document.querySelectorAll('.multi').forEach(function (root) {
+      if (!root.contains(event.target)) { openMenu(root, false); }
+    });
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') { return; }
+    document.querySelectorAll('.multi').forEach(function (root) {
+      if (root.querySelector('.multi-toggle').getAttribute('aria-expanded') === 'true') {
+        openMenu(root, false);
+        root.querySelector('.multi-toggle').focus();
+      }
+    });
+  });
+
+  function changed() {
+    syncStoresToRegions();
+    render(selection());
+  }
+  [fromInput, toInput].forEach(function (el) {
+    el.addEventListener('change', function () { render(selection()); });
+  });
+  document.getElementById('f-reset').addEventListener('click', function () {
+    regionBoxes.concat(storeBoxes).forEach(function (b) { b.checked = true; });
+    fromInput.value = fromInput.min;
+    toInput.value = toInput.max;
+    measure.value = 'revenue';
+    showMeasure();
+    changed();
+  });
+
+  // --- Articles: one ranking measure at a time --------------------------------
+  var measure = document.getElementById('f-measure');
+  function showMeasure() {
+    document.querySelectorAll('.measure').forEach(function (section) {
+      section.hidden = section.dataset.measure !== measure.value;
+    });
+  }
+  measure.addEventListener('change', showMeasure);
+  document.getElementById('f-measure-field').hidden = false;
+  showMeasure();
+
+  document.body.classList.add('js-filters');
+  syncStoresToRegions();
+  showSummary(regionBoxes, 'f-region-summary', 'regions', regionLabel);
+  showSummary(storeBoxes, 'f-store-summary', 'stores', storeLabel);
+})();

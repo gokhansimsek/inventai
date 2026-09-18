@@ -180,6 +180,49 @@ Kept up to date at each milestone rather than written at the end.
     rather than from the independent script. Two were wrong. They now come from the
     script, like every other expected value in the suite.
 
+### 9. Reviewing the filtering work
+
+- I asked for a two-axis review of the three filtering commits against `origin/main`:
+  one pass on the repo's documented standards, one on [ADR 0008](docs/adr/0008-in-report-filtering.md)
+  as the spec, run as separate agents so neither could excuse the other. They returned
+  11 and 9 findings. I then asked for them to be fixed.
+- **What the review caught that mattered:**
+  - The browser seam was agreed in ADR 0008 but never written into `CLAUDE.md`, so the
+    two documents contradicted each other about which seams exist. `CLAUDE.md` now
+    records it, including that the seam covers filter-driven page state.
+  - ADR 0008 claimed the page "only sums, averages and divides" and never restates a
+    formula. It also subtracted, and it recomputed which Monday starts a week from the
+    date — a *rule*, and the one thing in the page that could genuinely have drifted
+    from `enrich_sales`. The payload now carries a day → week lookup, and the ADR says
+    what the page actually does.
+  - The date controls took their maximum from the last clean sale. An inventory week
+    counts towards turnover only if it ends inside the range, so on a run ending after
+    the last sale, the page's own Reset would have dropped a week the server-rendered
+    report used. Latent on this data, where both fall on 2024-03-31; fixed in
+    `cube.date_bounds`, which spans the facts rather than the sales.
+  - An undefined ratio printed as `inf`/`nan` in Python and `0.00` in the page. Both
+    now print an em dash.
+- **The AI error the fixes surfaced.** ADR 0008 said the expected values came from "a
+  standalone pandas script over `data/`" — but that script was never committed, so
+  nothing could be checked or rerun. Writing it as `tools/profile_selections.py`
+  reproduced all six masthead figures for all four selections exactly, and the row
+  counts in [docs/data-quality.md](docs/data-quality.md).
+- **An AI error I caught in the review of the review.** The script first disagreed on
+  one figure — possible returns for the whole month, by 961 TRY — and the AI reported
+  that as a latent defect: one transaction is both non-positive in quantity and for the
+  unknown store `S-099`, so the quarantine counts it under the quantity rule while the
+  returns tile, scoped to known stores, does not. I asked for it to be fixed. It then
+  found that [assumptions.md](docs/assumptions.md#sales) already settles exactly this
+  ("excluded ... including from possible returns, so every figure covers the same
+  stores"), as does `filters.filter_by_store`. It had read `docs/data-quality.md` and the code,
+  but not the assumptions, so it presented a recorded decision as an accident — and
+  nearly reversed it on my say-so. Nothing changed but the wording in
+  `docs/data-quality.md`, which had stated the rule without its exception.
+- **Left alone deliberately:** the review flagged `_compute_kpis`'s six parameters as a
+  data clump, and that the ~600 lines of page JavaScript pass through none of the four
+  gates. The first is churn in a signature that reads fine; the second would mean
+  adding a JavaScript toolchain to a Python case study. Both raised, neither done.
+
 ## Reflection
 
 To be completed at submission, with an honest AI / human ratio.

@@ -103,9 +103,10 @@ src/retail_analytics/
   io/                      CSV reader, run manifest
   validation/              rule protocol, engine, rules, ordered registry
   kpis/                    sales, articles, inventory, returns
-  reporting/               report model, writers, charts, HTML template
-tests/                     rules, engine, KPIs, pipeline on real data, CLI
+  reporting/               report model, writers, charts, fact cube, templates
+tests/                     rules, engine, KPIs, pipeline on real data, CLI, report
 tools/check_docstrings.py  docstring gate used by pre-commit
+tools/profile_selections.py  independent profile of data/, for expected values
 ```
 
 **To extend:** a new data check is a class with `apply(df, tables)` added to
@@ -126,8 +127,13 @@ uv run pytest
   disagree with it.
 - **The CLI** is tested for filters, config overrides and error exits.
 - **The report's own filters** are driven in a headless browser (Playwright) and
-  compared with the same independent script, so the figures the page computes for a
-  selection cannot drift from the ones the pipeline would produce.
+  compared with `tools/profile_selections.py`, which re-derives the figures from the
+  raw CSVs, so the figures the page computes for a selection cannot drift from the
+  ones the pipeline would produce. Run that script to regenerate the expected values:
+
+  ```bash
+  uv run python tools/profile_selections.py
+  ```
 
 ## Development
 

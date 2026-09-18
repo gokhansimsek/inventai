@@ -53,10 +53,16 @@ as you write the function. Run the hooks on untracked files with
 
 Test-first, red → green, one behaviour per cycle, at these agreed seams only:
 a rule's `apply`, the validation engine, KPI functions, `run_pipeline`
-(real `data/`), and the CLI. Expected values come from hand-worked examples or
-the independent data profile in `docs/design-session.md` — never recomputed the
-way the code computes them. HTML layout and chart rendering are untested by
-design.
+(real `data/`), the CLI, and the report's own filter controls driven in a real
+browser (`tests/test_report_filters.py`, agreed in
+[ADR 0008](docs/adr/0008-in-report-filtering.md) because the page re-aggregates
+figures itself). Expected values come from hand-worked examples, the independent
+data profile in `docs/design-session.md`, or `tools/profile_selections.py`, which
+re-derives the report's figures from the raw CSVs — never recomputed the way the
+code computes them. Static HTML layout and chart rendering are untested by
+design; the browser seam covers what the filters compute, plus the few pieces of
+page state a filter changes (which ranking measure is shown, the empty-turnover
+state).
 
 ## Working agreements
 
