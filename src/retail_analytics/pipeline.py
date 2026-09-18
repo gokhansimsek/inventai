@@ -19,6 +19,7 @@ from retail_analytics.kpis.inventory import (
 )
 from retail_analytics.kpis.returns import summarise_possible_returns
 from retail_analytics.kpis.sales import enrich_sales, summarise_sales
+from retail_analytics.reporting.cube import build_facts
 from retail_analytics.reporting.report import Report
 from retail_analytics.reporting.writers import CsvWriter, HtmlWriter, Writer
 from retail_analytics.validation.engine import (
@@ -91,11 +92,16 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
     stores, articles = outcome.clean["stores"], outcome.clean["articles"]
     inventory = filter_by_store(outcome.clean["inventory"], stores, settings)
     turnover = inventory_turnover(inventory, articles, settings.date_from, settings.date_to)
+    enriched = enrich_sales(sales, articles, stores)
+    quarantined = _selected(outcome.rejected["transactions"], stores, settings)
+    kpis = _compute_kpis(
+        enriched, inventory, turnover, quarantined=quarantined, stores=stores, settings=settings
+    )
     report = Report(
         generated_at=started_at,
         selection=_describe_selection(settings),
         has_sales=not sales.empty,
-        kpis=_compute_kpis(outcome, sales, inventory, turnover, settings),
+        kpis=kpis,
         turnover_weeks=turnover.weeks,
         top_n=settings.top_n,
         min_units_for_margin_pct=settings.min_units_for_margin_pct,
@@ -103,6 +109,14 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
         row_counts=_row_counts_table(outcome),
         quarantine=outcome.rejected,
         issues=outcome.flagged,
+        facts=build_facts(
+            enriched,
+            inventory,
+            articles,
+            stores,
+            sales_vs_inventory=kpis["sales_vs_inventory"],
+            quarantined_sales=quarantined,
+        ),
     )
     log.info("Computed %d KPI tables", len(report.kpis), extra={"stage": "kpis"})
 
@@ -120,27 +134,28 @@ def run_pipeline(settings: Settings, writers: list[Writer] | None = None) -> Run
 
 
 def _compute_kpis(
-    outcome: ValidationOutcome,
-    sales: pd.DataFrame,
+    enriched: pd.DataFrame,
     inventory: pd.DataFrame,
     turnover: TurnoverResult,
+    *,
+    quarantined: pd.DataFrame,
+    stores: pd.DataFrame,
     settings: Settings,
 ) -> dict[str, pd.DataFrame]:
     """Compute every KPI table for the selected data.
 
     Args:
-        outcome (ValidationOutcome): Validated tables and quarantined rows.
-        sales (pd.DataFrame): Clean sales inside the selection.
+        enriched (pd.DataFrame): Clean sales inside the selection, with revenue, cost and
+            the article and store attributes added.
         inventory (pd.DataFrame): Clean inventory for the selected stores.
         turnover (TurnoverResult): Inventory turnover for the selection.
+        quarantined (pd.DataFrame): Quarantined transactions inside the selection.
+        stores (pd.DataFrame): Validated store master data.
         settings (Settings): Run settings: selection, date range and ranking options.
 
     Returns:
         dict[str, pd.DataFrame]: KPI tables keyed by the file name they are written to.
     """
-    stores, articles = outcome.clean["stores"], outcome.clean["articles"]
-    enriched = enrich_sales(sales, articles, stores)
-
     return {
         "summary": summarise_sales(enriched, []),
         "sales_by_store": summarise_sales(enriched, STORE_COLUMNS),
@@ -153,9 +168,7 @@ def _compute_kpis(
         .merge(turnover.by_store, on="store_id")
         .sort_values("turnover", ascending=False),
         "sales_vs_inventory": compare_sales_with_inventory(enriched, inventory, turnover.weeks),
-        "possible_returns": summarise_possible_returns(
-            _selected(outcome.rejected["transactions"], stores, settings)
-        ),
+        "possible_returns": summarise_possible_returns(quarantined),
     }
 
 

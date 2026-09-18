@@ -8,7 +8,7 @@ from typing import Protocol
 import pandas as pd
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from retail_analytics.reporting import charts
+from retail_analytics.reporting import charts, cube
 from retail_analytics.reporting.report import Report
 
 
@@ -106,6 +106,14 @@ class HtmlWriter:
             quiet_checks=int(
                 (report.data_quality[["fixed", "rejected", "flagged"]].sum(axis=1) == 0).sum()
             ),
+            facts_payload=cube.facts_json(
+                report.facts, report.top_n, report.min_units_for_margin_pct
+            )
+            if report.has_sales
+            else "",
+            regions=sorted(report.facts["stores"]["region"].unique()),
+            date_min=_bound(report, "min"),
+            date_max=_bound(report, "max"),
         )
         path.write_text(html, encoding="utf-8")
         return [path]
@@ -173,6 +181,23 @@ def _turnover_period(weeks: list[pd.Timestamp]) -> str:
         return ""
     last_day = weeks[-1] + pd.Timedelta(days=6)
     return f"{weeks[0]:%Y-%m-%d} to {last_day:%Y-%m-%d}"
+
+
+def _bound(report: Report, edge: str) -> str:
+    """Give the first or last day the filter controls may be set to.
+
+    Args:
+        report (Report): The report content, whose sales facts carry every selected day.
+        edge (str): ``"min"`` for the first day, ``"max"`` for the last.
+
+    Returns:
+        str: The day as ``YYYY-MM-DD``; empty when the selection holds no sales.
+    """
+    days = report.facts["sales"]["day"]
+    if days.empty:
+        return ""
+    day = days.min() if edge == "min" else days.max()
+    return str(day.strftime("%Y-%m-%d"))
 
 
 def _quality_summary(report: Report) -> dict[str, int]:

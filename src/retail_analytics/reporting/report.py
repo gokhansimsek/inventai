@@ -19,3 +19,4 @@ class Report:
     row_counts: pd.DataFrame
     quarantine: dict[str, pd.DataFrame]
     issues: dict[str, pd.DataFrame]
+    facts: dict[str, pd.DataFrame]

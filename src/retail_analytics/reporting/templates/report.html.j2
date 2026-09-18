@@ -99,8 +99,67 @@
   ul.assumptions li { margin: 0.45rem 0; color: var(--text-secondary); max-width: 54rem; }
   code { font-size: 0.88em; background: var(--surface-2); padding: 0.05rem 0.3rem; border-radius: 4px; }
 
+  /* --- Filter bar: one row above everything it scopes. --- */
+  .filters { display: none; }
+  body.js-filters .filters {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.9rem 1.4rem;
+    margin-top: 1.25rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 0.9rem 1.2rem;
+  }
+  .field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+  .field > span { color: var(--text-secondary); font-size: 0.8rem; }
+  .field select, .field input {
+    font: inherit; font-size: 0.92rem; color: var(--text-primary); background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 8px; padding: 0.35rem 0.5rem; min-width: 9rem;
+  }
+  .field select:focus-visible, .field input:focus-visible, .filters button:focus-visible,
+  .multi-toggle:focus-visible, .multi-menu button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+
+  /* --- Multi-select dropdown: a disclosure button over a checkbox list. --- */
+  .multi { position: relative; }
+  .multi-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    width: 100%; min-width: 11rem; font: inherit; font-size: 0.92rem; text-align: left;
+    color: var(--text-primary); background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 8px; padding: 0.35rem 0.5rem; cursor: pointer;
+  }
+  .multi-toggle .caret { color: var(--text-muted); font-size: 0.7rem; }
+  .multi-menu {
+    position: absolute; z-index: 20; top: calc(100% + 0.25rem); left: 0; min-width: 100%;
+    max-height: 15rem; overflow-y: auto; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 8px; padding: 0.35rem;
+    box-shadow: 0 6px 20px rgba(11, 11, 11, 0.12);
+  }
+  .multi-actions { display: flex; gap: 0.3rem; padding: 0 0.15rem 0.35rem; }
+  .multi-menu .multi-actions button {
+    font-size: 0.78rem; padding: 0.15rem 0.5rem; border-radius: 6px;
+  }
+  .multi-menu label {
+    display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;
+    padding: 0.3rem 0.4rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+  }
+  .multi-menu label:hover { background: var(--surface-2); }
+  .multi-menu label.off { color: var(--text-muted); cursor: not-allowed; }
+  /* Undo the text-input sizing above: these are checkboxes, not fields. */
+  .multi-menu input[type="checkbox"] {
+    accent-color: var(--accent); margin: 0; min-width: 0; width: auto; padding: 0;
+    border: 0; border-radius: 0; flex: none;
+  }
+  .filters button {
+    font: inherit; font-size: 0.9rem; color: var(--text-primary); background: var(--surface-2);
+    border: 1px solid var(--rule); border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer;
+  }
+  .filters button:hover { background: var(--rule); }
+  .filters .scope { flex-basis: 100%; margin: 0; color: var(--text-muted); font-size: 0.82rem; }
+  .fixed-note { color: var(--text-muted); font-size: 0.85rem; margin: 0.5rem 0 0; }
+  /* The Articles measure picker sits in its panel, not the filter bar; keep it compact. */
+  #f-measure-field { align-items: flex-start; margin: 1.1rem 0 0.5rem; }
+
   @media print {
     body { background: #fff; }
+    .filters { display: none !important; }
     .tabs { display: none !important; }
     .panel[hidden] { display: block !important; }
     .panel { break-before: page; }
@@ -114,9 +173,56 @@
 <main>
 <header>
   <h1>Retail Analytics Report</h1>
-  <p class="meta">{{ report.selection }}</p>
+  <p class="meta" id="selection">{{ report.selection }}</p>
   <p class="meta">Generated {{ report.generated_at.strftime("%Y-%m-%d %H:%M") }} · All amounts in TRY · Revenue after discount</p>
 </header>
+
+{% if report.has_sales %}
+<form class="filters" id="filters" aria-label="Narrow the report">
+  <div class="field">
+    <span id="f-region-label">Regions</span>
+    <div class="multi" id="f-region">
+      <button type="button" class="multi-toggle" aria-expanded="false" aria-haspopup="true"
+              aria-labelledby="f-region-label f-region-summary">
+        <span class="multi-summary" id="f-region-summary">All regions</span>
+        <span class="caret" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="multi-menu" role="group" aria-labelledby="f-region-label" hidden>
+        <div class="multi-actions">
+          <button type="button" data-all>All</button><button type="button" data-none>None</button>
+        </div>
+        {% for region in regions %}<label><input type="checkbox" data-region="{{ region }}" checked>{{ region }}</label>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <span id="f-store-label">Stores</span>
+    <div class="multi" id="f-store">
+      <button type="button" class="multi-toggle" aria-expanded="false" aria-haspopup="true"
+              aria-labelledby="f-store-label f-store-summary">
+        <span class="multi-summary" id="f-store-summary">All stores</span>
+        <span class="caret" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="multi-menu" role="group" aria-labelledby="f-store-label" hidden>
+        <div class="multi-actions">
+          <button type="button" data-all>All</button><button type="button" data-none>None</button>
+        </div>
+        {% for store in report.facts["stores"].itertuples() %}<label><input type="checkbox" data-store="{{ store.store_id }}" data-store-region="{{ store.region }}" checked>{{ store.store_name }}</label>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <label class="field">
+    <span>From</span>
+    <input type="date" id="f-from" min="{{ date_min }}" max="{{ date_max }}" value="{{ date_min }}">
+  </label>
+  <label class="field">
+    <span>To</span>
+    <input type="date" id="f-to" min="{{ date_min }}" max="{{ date_max }}" value="{{ date_max }}">
+  </label>
+  <button type="button" id="f-reset">Reset</button>
+  <p class="scope">Applies to the figures below and to the Sales, Articles and Inventory tabs. Data quality and Assumptions describe the whole input file and never change.</p>
+</form>
+{% endif %}
 
 <div class="masthead">
 {% if report.has_sales %}
@@ -125,26 +231,30 @@
   <div class="headline">
     <div class="hero">
       <div class="label">Revenue</div>
-      <div class="figure">{{ money(s.revenue) }}</div>
-      <div class="sub">TRY, after discount · {{ "{:,}".format(s.transactions | int) }} sale lines</div>
+      <div class="figure" id="m-revenue">{{ money(s.revenue) }}</div>
+      <div class="sub">TRY, after discount · <span id="m-lines">{{ "{:,}".format(s.transactions | int) }}</span> sale lines</div>
     </div>
     <div class="stats">
       <div class="stat">
         <div class="label">Gross margin</div>
-        <div class="value">{{ percent(s.gross_margin_pct) }}</div>
-        <div class="sub">{{ money(s.gross_margin) }} TRY</div>
+        <div class="value" id="m-margin-pct">{{ percent(s.gross_margin_pct) }}</div>
+        <div class="sub"><span id="m-margin">{{ money(s.gross_margin) }}</span> TRY</div>
       </div>
       <div class="stat">
         <div class="label">Units sold</div>
-        <div class="value">{{ "{:,}".format(s.units | int) }}</div>
-        <div class="sub">across {{ report.kpis["sales_by_store"] | length }} store{{ "s" if report.kpis["sales_by_store"] | length != 1 }}</div>
+        <div class="value" id="m-units">{{ "{:,}".format(s.units | int) }}</div>
+        <div class="sub" id="m-stores">across {{ report.kpis["sales_by_store"] | length }} store{{ "s" if report.kpis["sales_by_store"] | length != 1 }}</div>
       </div>
       <div class="stat warning">
         <div class="label"><span class="dot"></span>Possible returns</div>
-        <div class="value">{{ money(r.value) }}</div>
-        <div class="sub">TRY · {{ r.transactions | int }} lines, excluded from revenue</div>
+        <div class="value" id="m-returns">{{ money(r.value) }}</div>
+        <div class="sub">TRY · <span id="m-return-lines">{{ r.transactions | int }}</span> lines, excluded from revenue</div>
       </div>
     </div>
+  </div>
+  <div class="empty" id="no-match" hidden>
+    <strong>No sales match this selection.</strong>
+    <p class="note">Widen the stores or the date range above, or press Reset.</p>
   </div>
 {% else %}
   <div class="hero">
@@ -182,39 +292,47 @@
 <div class="panel" id="sales" role="tabpanel" aria-labelledby="tab-sales" tabindex="0">
   <h2>Revenue over time</h2>
   <p class="note">Daily revenue across the selected period.</p>
-  <div class="card">{{ charts.revenue_by_day | safe }}</div>
+  <div class="card" id="c-day">{{ charts.revenue_by_day | safe }}</div>
   <div class="pair">
-    <div><h3>By week (Monday to Sunday)</h3><p class="note">The first and last weeks can be partial: the data starts and ends mid-week.</p><div class="scroll">{{ table(report.kpis["sales_by_week"], ["week", "units", "revenue", "gross_margin_pct"]) | safe }}</div></div>
-    <div><h3>By month</h3><div class="scroll">{{ table(report.kpis["sales_by_month"], ["month", "units", "revenue", "gross_margin", "gross_margin_pct"]) | safe }}</div></div>
+    <div><h3>By week (Monday to Sunday)</h3><p class="note">The first and last weeks can be partial: the data starts and ends mid-week.</p><div class="scroll" id="t-week">{{ table(report.kpis["sales_by_week"], ["week", "units", "revenue", "gross_margin_pct"]) | safe }}</div></div>
+    <div><h3>By month</h3><div class="scroll" id="t-month">{{ table(report.kpis["sales_by_month"], ["month", "units", "revenue", "gross_margin", "gross_margin_pct"]) | safe }}</div></div>
   </div>
 
   <section class="sub">
     <h2>Revenue and margin by store</h2>
     <div class="pair">
-      <div><h3>Revenue (TRY)</h3>{{ charts.revenue_by_store | safe }}</div>
-      <div><h3>Gross margin %</h3>{{ charts.margin_by_store | safe }}</div>
+      <div><h3>Revenue (TRY)</h3><div id="c-store-revenue">{{ charts.revenue_by_store | safe }}</div></div>
+      <div><h3>Gross margin %</h3><div id="c-store-margin">{{ charts.margin_by_store | safe }}</div></div>
     </div>
-    <div class="scroll">{{ table(report.kpis["sales_by_store"], ["store_name", "region", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
+    <div class="scroll" id="t-store">{{ table(report.kpis["sales_by_store"], ["store_name", "region", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
   </section>
 
   <section class="sub">
     <h2>Revenue and margin by category</h2>
     <div class="pair">
-      <div><h3>Revenue (TRY)</h3>{{ charts.revenue_by_category | safe }}</div>
-      <div><h3>Gross margin %</h3>{{ charts.margin_by_category | safe }}</div>
+      <div><h3>Revenue (TRY)</h3><div id="c-cat-revenue">{{ charts.revenue_by_category | safe }}</div></div>
+      <div><h3>Gross margin %</h3><div id="c-cat-margin">{{ charts.margin_by_category | safe }}</div></div>
     </div>
-    <div class="scroll">{{ table(report.kpis["sales_by_category"], ["category", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
+    <div class="scroll" id="t-category">{{ table(report.kpis["sales_by_category"], ["category", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
   </section>
 </div>
 
 <div class="panel" id="articles" role="tabpanel" aria-labelledby="tab-articles" tabindex="0" hidden>
   <h2>Top and bottom {{ report.top_n }} articles</h2>
   <p class="note">Margin % lists include only articles with at least {{ report.min_units_for_margin_pct }} units sold, so a handful of sales cannot dominate them.</p>
+  <label class="field" id="f-measure-field" hidden>
+    <span>Ranked by</span>
+    <select id="f-measure">
+      <option value="revenue" selected>Revenue</option>
+      <option value="margin_try">Gross margin (TRY)</option>
+      <option value="margin_pct">Gross margin %</option>
+    </select>
+  </label>
   {% set article_columns = ["rank", "article_id", "article_name", "category", "units", "revenue", "gross_margin", "gross_margin_pct"] %}
   {% for measure, title in [("revenue", "revenue"), ("margin_try", "gross margin (TRY)"), ("margin_pct", "gross margin %")] %}
-  <section class="sub">
-    <h3>Top by {{ title }}</h3><div class="scroll">{{ table(report.kpis["top_by_" ~ measure], article_columns) | safe }}</div>
-    <h3>Bottom by {{ title }}</h3><div class="scroll">{{ table(report.kpis["bottom_by_" ~ measure], article_columns) | safe }}</div>
+  <section class="sub measure" data-measure="{{ measure }}">
+    <h3>Top by {{ title }}</h3><div class="scroll" id="t-top_by_{{ measure }}">{{ table(report.kpis["top_by_" ~ measure], article_columns) | safe }}</div>
+    <h3>Bottom by {{ title }}</h3><div class="scroll" id="t-bottom_by_{{ measure }}">{{ table(report.kpis["bottom_by_" ~ measure], article_columns) | safe }}</div>
   </section>
   {% endfor %}
 </div>
@@ -223,28 +341,29 @@
 <div class="panel" id="inventory" role="tabpanel" aria-labelledby="tab-inventory" tabindex="0"{% if report.has_sales %} hidden{% endif %}>
   <h2>Inventory turnover</h2>
   {% set turnover = report.kpis["inventory_turnover_by_store"] %}
-  {% if turnover.empty %}
-  <div class="empty"><strong>Not available:</strong> the selected date range does not contain a full inventory week (Monday to Sunday).</div>
-  {% else %}
-  <p class="note">
-    Cost of goods sold ÷ average weekly inventory value, both at purchase price, for the period
-    {{ turnover_period }}
-    ({{ report.turnover_weeks | length }} week{{ "s" if report.turnover_weeks | length != 1 }}). Not annualised.
-    Only inventory weeks lying entirely inside the date range are used. The inventory file samples different
-    articles each week, so turnover describes the sampled articles.
-  </p>
-  {% if charts.turnover_by_store %}<div class="card">{{ charts.turnover_by_store | safe }}</div>{% endif %}
-  <div class="scroll">{{ table(turnover, ["store_name", "region", "weeks", "cogs", "avg_inventory_value", "turnover"]) | safe }}</div>
-
-  <section class="sub">
-    <h3>Sales in the inventory file vs transactions</h3>
+  <div class="empty" id="turnover-empty"{% if not turnover.empty %} hidden{% endif %}>
+    <strong>Not available:</strong> the selected date range does not contain a full inventory week (Monday to Sunday).
+  </div>
+  <div id="turnover-body"{% if turnover.empty %} hidden{% endif %}>
     <p class="note">
-      Units sold according to the inventory file, compared with units in the transactions for the same
-      store, article and week. The two files do not reconcile, which is why turnover uses the inventory file alone.
+      Cost of goods sold ÷ average weekly inventory value, both at purchase price, for the period
+      <span id="turnover-period">{{ turnover_period }}</span>
+      (<span id="turnover-weeks">{{ report.turnover_weeks | length }} week{{ "s" if report.turnover_weeks | length != 1 }}</span>). Not annualised.
+      Only inventory weeks lying entirely inside the date range are used. The inventory file samples different
+      articles each week, so turnover describes the sampled articles.
     </p>
-    <div class="scroll">{{ table(report.kpis["sales_vs_inventory"]) | safe }}</div>
-  </section>
-  {% endif %}
+    <div class="card" id="c-turnover">{{ charts.turnover_by_store | safe }}</div>
+    <div class="scroll" id="t-turnover">{{ table(turnover, ["store_name", "region", "weeks", "cogs", "avg_inventory_value", "turnover"]) | safe }}</div>
+
+    <section class="sub">
+      <h3>Sales in the inventory file vs transactions</h3>
+      <p class="note">
+        Units sold according to the inventory file, compared with units in the transactions for the same
+        store, article and week. The two files do not reconcile, which is why turnover uses the inventory file alone.
+      </p>
+      <div class="scroll" id="t-reconcile">{{ table(report.kpis["sales_vs_inventory"]) | safe }}</div>
+    </section>
+  </div>
 </div>
 
 <div class="panel" id="quality" role="tabpanel" aria-labelledby="tab-quality" tabindex="0" hidden>
@@ -255,6 +374,7 @@
     row to quarantine with a reason. Quarantined rows are in <code>quarantine/</code> and flagged rows in
     <code>issues/</code>.
   </p>
+  <p class="fixed-note">Validation runs on the full input files before any filter, so nothing in this section responds to the store, region or date controls.</p>
 
   <h3>Rows processed</h3>
   <div class="scroll">{{ table(report.row_counts) | safe }}</div>
@@ -277,6 +397,406 @@
   </ul>
 </div>
 </main>
+{% if facts_payload %}<script type="application/json" id="facts">{{ facts_payload | safe }}</script>
+<script>
+// Re-aggregates the pre-computed facts for the current selection. Every measure was
+// computed per row in Python; nothing here restates a KPI formula, it only sums,
+// averages and divides, so a filtered figure equals the pipeline's for that selection.
+(function () {
+  var form = document.getElementById('filters');
+  var node = document.getElementById('facts');
+  if (!form || !node) { return; }
+  var F = JSON.parse(node.textContent);
+  var DAY = 86400000;
+  var parts = F.origin.split('-');
+  var ORIGIN = Date.UTC(+parts[0], +parts[1] - 1, +parts[2]);
+
+  function dateOf(offset) { return new Date(ORIGIN + offset * DAY); }
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  function offsetOf(text) {
+    var p = text.split('-');
+    return Math.round((Date.UTC(+p[0], +p[1] - 1, +p[2]) - ORIGIN) / DAY);
+  }
+  var money = function (v) { return v.toLocaleString('en-US', { maximumFractionDigits: 0 }); };
+  var pct = function (v) { return isFinite(v) ? (v * 100).toFixed(1) + '%' : '0.0%'; };
+  var count = function (v) { return v.toLocaleString('en-US'); };
+  var turn = function (v) { return isFinite(v) ? v.toFixed(2) : '0.00'; };
+
+  var fromInput = document.getElementById('f-from');
+  var toInput = document.getElementById('f-to');
+  var regionBoxes = Array.prototype.slice.call(
+    document.querySelectorAll('#f-region input[data-region]'));
+  var storeBoxes = Array.prototype.slice.call(
+    document.querySelectorAll('#f-store input[data-store]'));
+
+  function chosenRegions() {
+    return regionBoxes.filter(function (b) { return b.checked; })
+      .map(function (b) { return b.dataset.region; });
+  }
+  function liveStores() {
+    // A store counts when it is ticked and its region is ticked: both filters apply.
+    return storeBoxes.filter(function (b) { return b.checked && !b.disabled; });
+  }
+  function syncStoresToRegions() {
+    var regions = chosenRegions();
+    storeBoxes.forEach(function (box) {
+      var off = regions.indexOf(box.dataset.storeRegion) === -1;
+      box.disabled = off;
+      box.parentNode.classList.toggle('off', off);
+    });
+  }
+
+  function selection() {
+    var chosen = new Set();
+    var live = liveStores();
+    storeBoxes.forEach(function (box, i) { if (live.indexOf(box) > -1) { chosen.add(i); } });
+    return { stores: chosen, from: offsetOf(fromInput.value), to: offsetOf(toInput.value) };
+  }
+
+  function summarise(boxes, id, noun, labelOf) {
+    var on = boxes.filter(function (b) { return b.checked && !b.disabled; });
+    var text = on.length === 0 ? 'No ' + noun
+      : on.length === boxes.length ? 'All ' + noun
+      : on.length === 1 ? labelOf(on[0])
+      : on.length + ' of ' + boxes.length + ' ' + noun;
+    document.getElementById(id).textContent = text;
+    return on;
+  }
+  var storeLabel = function (b) { return b.parentNode.textContent.trim(); };
+
+  // --- Aggregation -----------------------------------------------------------
+  function bucket(map, key) {
+    var b = map.get(key);
+    if (!b) { b = { key: key, n: 0, u: 0, r: 0, c: 0 }; map.set(key, b); }
+    return b;
+  }
+  function add(b, i, S) { b.n += S.n[i]; b.u += S.u[i]; b.r += S.r[i]; b.c += S.c[i]; }
+  function finish(b) {
+    b.gross_margin = b.r - b.c;
+    b.gross_margin_pct = b.r ? b.gross_margin / b.r : 0;
+    return b;
+  }
+  function byRevenue(a, b) { return b.r - a.r; }
+
+  function aggregate(sel) {
+    var S = F.sales;
+    var total = { n: 0, u: 0, r: 0, c: 0 };
+    var stores = new Map(), cats = new Map(), days = new Map(), weeks = new Map(),
+        months = new Map(), articles = new Map();
+    for (var i = 0; i < S.d.length; i++) {
+      var d = S.d[i];
+      if (d < sel.from || d > sel.to || !sel.stores.has(S.s[i])) { continue; }
+      total.n += S.n[i]; total.u += S.u[i]; total.r += S.r[i]; total.c += S.c[i];
+      add(bucket(stores, S.s[i]), i, S);
+      add(bucket(articles, S.a[i]), i, S);
+      add(bucket(cats, F.articles[S.a[i]].category), i, S);
+      add(bucket(days, d), i, S);
+      var dt = dateOf(d);
+      add(bucket(weeks, d - ((dt.getUTCDay() + 6) % 7)), i, S);
+      add(bucket(months, iso(dt).slice(0, 7)), i, S);
+    }
+    var returns = { n: 0, v: 0 };
+    var R = F.returns;
+    for (var j = 0; j < R.d.length; j++) {
+      if (R.d[j] < sel.from || R.d[j] > sel.to || !sel.stores.has(R.s[j])) { continue; }
+      returns.n += R.n[j]; returns.v += R.v[j];
+    }
+    var list = function (m) { return Array.from(m.values()).map(finish); };
+    return {
+      total: finish(total), returns: returns,
+      stores: list(stores).sort(byRevenue), categories: list(cats).sort(byRevenue),
+      days: list(days).sort(function (a, b) { return a.key - b.key; }),
+      weeks: list(weeks).sort(function (a, b) { return a.key - b.key; }),
+      months: list(months).sort(function (a, b) { return a.key < b.key ? -1 : 1; }),
+      // Ranking sorts a revenue-ordered list, matching rank_articles' stable sort.
+      articles: list(articles).sort(byRevenue),
+    };
+  }
+
+  // --- Rendering -------------------------------------------------------------
+  function table(id, columns, rows) {
+    var host = document.getElementById(id);
+    if (!host) { return; }
+    var head = columns.map(function (c) {
+      return '<th class="' + (c.text ? 'text' : 'num') + '">' + c.label + '</th>';
+    }).join('');
+    var body = rows.map(function (row) {
+      return '<tr>' + columns.map(function (c) {
+        return '<td class="' + (c.text ? 'text' : 'num') + '">' + c.get(row) + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    host.innerHTML = '<table class="data"><thead><tr>' + head + '</tr></thead><tbody>'
+      + body + '</tbody></table>';
+  }
+
+  function plot(id) {
+    var host = document.getElementById(id);
+    return host ? host.querySelector('.js-plotly-plot') : null;
+  }
+  function bars(id, labels, values) {
+    var div = plot(id);
+    if (!div || !window.Plotly) { return; }
+    var low = Math.min.apply(null, [0].concat(values));
+    var high = Math.max.apply(null, [0].concat(values));
+    var height = labels.length * 34 + 70;
+    Plotly.restyle(div, { x: [values], y: [labels] });
+    // The outer div keeps the inline height of the first render, so a shorter chart
+    // would leave dead space below it; set it alongside the layout height.
+    div.style.height = height + 'px';
+    Plotly.relayout(div, { height: height, 'xaxis.range': [low * 1.22, high * 1.22] });
+  }
+  function line(id, x, y) {
+    var div = plot(id);
+    if (!div || !window.Plotly) { return; }
+    Plotly.restyle(div, { x: [x], y: [y] });
+  }
+
+  var articleColumns = [
+    { label: 'Rank', get: function (r) { return r.rank; } },
+    { label: 'Article', text: true, get: function (r) { return r.article_id; } },
+    { label: 'Article name', text: true, get: function (r) { return r.article_name; } },
+    { label: 'Category', text: true, get: function (r) { return r.category; } },
+    { label: 'Units', get: function (r) { return count(r.u); } },
+    { label: 'Revenue (TRY)', get: function (r) { return money(r.r); } },
+    { label: 'Gross margin (TRY)', get: function (r) { return money(r.gross_margin); } },
+    { label: 'Gross margin %', get: function (r) { return pct(r.gross_margin_pct); } },
+  ];
+
+  function ranked(rows, measure, highestFirst) {
+    var sorted = rows.slice().sort(function (a, b) {
+      return highestFirst ? measure(b) - measure(a) : measure(a) - measure(b);
+    });
+    return sorted.slice(0, F.topN).map(function (row, i) {
+      var article = F.articles[row.key];
+      return {
+        rank: i + 1, article_id: article.article_id, article_name: article.article_name,
+        category: article.category, u: row.u, r: row.r,
+        gross_margin: row.gross_margin, gross_margin_pct: row.gross_margin_pct,
+      };
+    });
+  }
+
+  function render(sel) {
+    var a = aggregate(sel);
+    var empty = a.total.n === 0;
+    document.getElementById('no-match').hidden = !empty;
+
+    document.getElementById('m-revenue').textContent = empty ? '—' : money(a.total.r);
+    document.getElementById('m-lines').textContent = count(a.total.n);
+    document.getElementById('m-margin-pct').textContent = pct(a.total.gross_margin_pct);
+    document.getElementById('m-margin').textContent = money(a.total.gross_margin);
+    document.getElementById('m-units').textContent = count(a.total.u);
+    document.getElementById('m-stores').textContent = 'across ' + a.stores.length
+      + ' store' + (a.stores.length === 1 ? '' : 's');
+    document.getElementById('m-returns').textContent = money(a.returns.v);
+    document.getElementById('m-return-lines').textContent = count(a.returns.n);
+
+    var regionsOn = summarise(regionBoxes, 'f-region-summary', 'regions',
+      function (b) { return b.dataset.region; });
+    var storesOn = summarise(storeBoxes, 'f-store-summary', 'stores', storeLabel);
+    var describe = function (on, all, join) {
+      return on.length === all ? 'all' : on.length ? on.map(join).join(', ') : 'none';
+    };
+    document.getElementById('selection').textContent =
+      'Stores: ' + describe(storesOn, storeBoxes.length, storeLabel)
+      + ' · Regions: ' + describe(regionsOn, regionBoxes.length,
+        function (b) { return b.dataset.region; })
+      + ' · Dates: ' + fromInput.value + ' to ' + toInput.value;
+
+    var storeName = function (r) { return F.stores[r.key].store_name; };
+    table('t-store', [
+      { label: 'Store name', text: true, get: storeName },
+      { label: 'Region', text: true, get: function (r) { return F.stores[r.key].region; } },
+      { label: 'Transactions', get: function (r) { return count(r.n); } },
+      { label: 'Units', get: function (r) { return count(r.u); } },
+      { label: 'Revenue (TRY)', get: function (r) { return money(r.r); } },
+      { label: 'Cost (TRY)', get: function (r) { return money(r.c); } },
+      { label: 'Gross margin (TRY)', get: function (r) { return money(r.gross_margin); } },
+      { label: 'Gross margin %', get: function (r) { return pct(r.gross_margin_pct); } },
+    ], a.stores);
+    table('t-category', [
+      { label: 'Category', text: true, get: function (r) { return r.key; } },
+      { label: 'Transactions', get: function (r) { return count(r.n); } },
+      { label: 'Units', get: function (r) { return count(r.u); } },
+      { label: 'Revenue (TRY)', get: function (r) { return money(r.r); } },
+      { label: 'Cost (TRY)', get: function (r) { return money(r.c); } },
+      { label: 'Gross margin (TRY)', get: function (r) { return money(r.gross_margin); } },
+      { label: 'Gross margin %', get: function (r) { return pct(r.gross_margin_pct); } },
+    ], a.categories);
+    table('t-week', [
+      { label: 'Week', text: true, get: function (r) { return iso(dateOf(r.key)); } },
+      { label: 'Units', get: function (r) { return count(r.u); } },
+      { label: 'Revenue (TRY)', get: function (r) { return money(r.r); } },
+      { label: 'Gross margin %', get: function (r) { return pct(r.gross_margin_pct); } },
+    ], a.weeks);
+    table('t-month', [
+      { label: 'Month', text: true, get: function (r) { return r.key; } },
+      { label: 'Units', get: function (r) { return count(r.u); } },
+      { label: 'Revenue (TRY)', get: function (r) { return money(r.r); } },
+      { label: 'Gross margin (TRY)', get: function (r) { return money(r.gross_margin); } },
+      { label: 'Gross margin %', get: function (r) { return pct(r.gross_margin_pct); } },
+    ], a.months);
+
+    var eligible = a.articles.filter(function (r) { return r.u >= F.minUnits; });
+    var measures = {
+      revenue: [a.articles, function (r) { return r.r; }],
+      margin_try: [a.articles, function (r) { return r.gross_margin; }],
+      margin_pct: [eligible, function (r) { return r.gross_margin_pct; }],
+    };
+    Object.keys(measures).forEach(function (name) {
+      var rows = measures[name][0], measure = measures[name][1];
+      table('t-top_by_' + name, articleColumns, ranked(rows, measure, true));
+      table('t-bottom_by_' + name, articleColumns, ranked(rows, measure, false));
+    });
+
+    bars('c-store-revenue', a.stores.map(storeName), a.stores.map(function (r) { return r.r; }));
+    var byMargin = a.stores.slice().sort(function (x, y) {
+      return y.gross_margin_pct - x.gross_margin_pct;
+    });
+    bars('c-store-margin', byMargin.map(storeName),
+      byMargin.map(function (r) { return r.gross_margin_pct; }));
+    bars('c-cat-revenue', a.categories.map(function (r) { return r.key; }),
+      a.categories.map(function (r) { return r.r; }));
+    var catMargin = a.categories.slice().sort(function (x, y) {
+      return y.gross_margin_pct - x.gross_margin_pct;
+    });
+    bars('c-cat-margin', catMargin.map(function (r) { return r.key; }),
+      catMargin.map(function (r) { return r.gross_margin_pct; }));
+    line('c-day', a.days.map(function (r) { return iso(dateOf(r.key)); }),
+      a.days.map(function (r) { return r.r; }));
+
+    renderInventory(sel);
+  }
+
+  function renderInventory(sel) {
+    var I = F.inventory, perStore = new Map(), used = new Set();
+    for (var i = 0; i < I.w.length; i++) {
+      // A week counts only when it lies entirely inside the range, as inventory_turnover does.
+      if (I.w[i] < sel.from || I.w[i] + 6 > sel.to || !sel.stores.has(I.s[i])) { continue; }
+      var b = perStore.get(I.s[i]);
+      if (!b) { b = { key: I.s[i], weeks: 0, cogs: 0, value: 0 }; perStore.set(I.s[i], b); }
+      b.weeks += 1; b.cogs += I.cogs[i]; b.value += I.value[i];
+      used.add(I.w[i]);
+    }
+    var rows = Array.from(perStore.values()).map(function (b) {
+      b.avg = b.weeks ? b.value / b.weeks : 0;
+      b.turnover = b.avg ? b.cogs / b.avg : 0;
+      return b;
+    }).sort(function (x, y) { return y.turnover - x.turnover; });
+
+    document.getElementById('turnover-empty').hidden = rows.length > 0;
+    document.getElementById('turnover-body').hidden = rows.length === 0;
+    if (!rows.length) { return; }
+
+    var weeks = Array.from(used).sort(function (x, y) { return x - y; });
+    document.getElementById('turnover-period').textContent =
+      iso(dateOf(weeks[0])) + ' to ' + iso(dateOf(weeks[weeks.length - 1] + 6));
+    document.getElementById('turnover-weeks').textContent =
+      weeks.length + ' week' + (weeks.length === 1 ? '' : 's');
+
+    table('t-turnover', [
+      { label: 'Store name', text: true, get: function (r) { return F.stores[r.key].store_name; } },
+      { label: 'Region', text: true, get: function (r) { return F.stores[r.key].region; } },
+      { label: 'Weeks', get: function (r) { return r.weeks; } },
+      { label: 'COGS (TRY)', get: function (r) { return money(r.cogs); } },
+      { label: 'Avg inventory (TRY)', get: function (r) { return money(r.avg); } },
+      { label: 'Turnover', get: function (r) { return turn(r.turnover); } },
+    ], rows);
+    bars('c-turnover', rows.map(function (r) { return F.stores[r.key].store_name; }),
+      rows.map(function (r) { return r.turnover; }));
+
+    var C = F.reconcile, pairs = [];
+    for (var j = 0; j < C.w.length; j++) {
+      if (!used.has(C.w[j]) || !sel.stores.has(C.s[j])) { continue; }
+      pairs.push({
+        store: F.stores[C.s[j]].store_id, week: C.w[j], articles: C.articles[j],
+        sold: C.sold[j], units: C.units[j],
+      });
+    }
+    pairs.sort(function (x, y) { return x.store < y.store ? -1 : x.store > y.store ? 1 : x.week - y.week; });
+    table('t-reconcile', [
+      { label: 'Store', text: true, get: function (r) { return r.store; } },
+      { label: 'Week', text: true, get: function (r) { return iso(dateOf(r.week)); } },
+      { label: 'Articles', get: function (r) { return count(r.articles); } },
+      { label: 'Sold per inventory', get: function (r) { return count(r.sold); } },
+      { label: 'Units per transactions', get: function (r) { return count(r.units); } },
+      { label: 'Difference', get: function (r) { return count(r.units - r.sold); } },
+    ], pairs);
+  }
+
+  // --- The two dropdowns ------------------------------------------------------
+  function openMenu(root, open) {
+    root.querySelector('.multi-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+    root.querySelector('.multi-menu').hidden = !open;
+  }
+  ['f-region', 'f-store'].forEach(function (id) {
+    var root = document.getElementById(id);
+    var toggle = root.querySelector('.multi-toggle');
+    toggle.addEventListener('click', function () {
+      var open = toggle.getAttribute('aria-expanded') === 'true';
+      document.querySelectorAll('.multi').forEach(function (other) { openMenu(other, false); });
+      openMenu(root, !open);
+    });
+    root.querySelector('[data-all]').addEventListener('click', function () {
+      root.querySelectorAll('input[type="checkbox"]').forEach(function (b) { b.checked = true; });
+      changed();
+    });
+    root.querySelector('[data-none]').addEventListener('click', function () {
+      root.querySelectorAll('input[type="checkbox"]').forEach(function (b) { b.checked = false; });
+      changed();
+    });
+    root.addEventListener('change', function (event) {
+      if (event.target.type === 'checkbox') { changed(); }
+    });
+  });
+  document.addEventListener('click', function (event) {
+    document.querySelectorAll('.multi').forEach(function (root) {
+      if (!root.contains(event.target)) { openMenu(root, false); }
+    });
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') { return; }
+    document.querySelectorAll('.multi').forEach(function (root) {
+      if (root.querySelector('.multi-toggle').getAttribute('aria-expanded') === 'true') {
+        openMenu(root, false);
+        root.querySelector('.multi-toggle').focus();
+      }
+    });
+  });
+
+  function changed() {
+    syncStoresToRegions();
+    render(selection());
+  }
+  [fromInput, toInput].forEach(function (el) {
+    el.addEventListener('change', function () { render(selection()); });
+  });
+  document.getElementById('f-reset').addEventListener('click', function () {
+    regionBoxes.concat(storeBoxes).forEach(function (b) { b.checked = true; });
+    fromInput.value = fromInput.min;
+    toInput.value = toInput.max;
+    measure.value = 'revenue';
+    showMeasure();
+    changed();
+  });
+
+  // --- Articles: one ranking measure at a time --------------------------------
+  var measure = document.getElementById('f-measure');
+  function showMeasure() {
+    document.querySelectorAll('.measure').forEach(function (section) {
+      section.hidden = section.dataset.measure !== measure.value;
+    });
+  }
+  measure.addEventListener('change', showMeasure);
+  document.getElementById('f-measure-field').hidden = false;
+  showMeasure();
+
+  document.body.classList.add('js-filters');
+  syncStoresToRegions();
+  summarise(regionBoxes, 'f-region-summary', 'regions', function (b) { return b.dataset.region; });
+  summarise(storeBoxes, 'f-store-summary', 'stores', storeLabel);
+})();
+</script>{% endif %}
 <script>
 (function () {
   var list = document.querySelector('[role="tablist"]');
