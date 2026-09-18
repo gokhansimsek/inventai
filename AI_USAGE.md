@@ -86,6 +86,42 @@ Kept up to date at each milestone rather than written at the end.
     the same step as its test, so the test was never seen failing first. It
     is a slip in the test-first discipline, noted rather than hidden.
 
+### 6. Independent structural review of the finished code
+
+- Built a knowledge graph of the whole repository (`graphify`) to check the
+  architecture from outside the code: 59 files → 567 nodes, 992 edges. Code
+  structure comes from AST parsing; the documents are read by a separate pass
+  that labels every edge `EXTRACTED`, `INFERRED` or `AMBIGUOUS`.
+- **What it confirmed.** `RuleResult` and `Severity` are the two most connected
+  types in the codebase, and both are touched by exactly the same 15 rule
+  classes: every class that declares a severity also returns a `RuleResult`.
+  `Rule` is a `Protocol`, so nothing forces that — the graph verifies the
+  contract holds with no partial implementations, independently of mypy.
+  `run_pipeline()` has 25 outward edges and 2 inward ones (the CLI and the
+  tests), which is the shape a composition root should have.
+- **AI errors caught:**
+  - The document pass invented a relationship: it linked the 2027-dated
+    transactions to the duplicate `transaction_id` finding as
+    "semantically similar", reasoning that both look like deliberately seeded
+    defects. No document says that — `docs/data-quality.md` attributes
+    "suggests injected records" to the 2027 rows only. The edge was deleted, not
+    downgraded, and the extraction prompt was tightened to forbid similarity
+    edges justified by an inferred shared origin.
+  - My own first correction was also wrong. I proposed keeping the edge under a
+    weaker label, on the theory that the duplicate rules must run before
+    `InferFutureDatesFromIdOrder` for the id sequence to be usable. Running that
+    rule against three frames — deduplicated, exact copy present, sign-conflict
+    pair present — gave identical results: the repair is invariant to duplicates,
+    because the ordering check is non-strict. The hypothesis was dropped rather
+    than shipped as a plausible-sounding edge.
+  - The graph was missing a relationship the documents state outright: ADR 0005
+    opens by naming the 2027 finding as the reason for the decision, but that
+    finding was linked only to the data-quality table. Added as `EXTRACTED`.
+- **Why the audit trail mattered.** The fabricated edge was findable only because
+  the tool records its own confidence and reasoning per edge. Re-running the
+  document pass with the tightened prompt produced zero `AMBIGUOUS` edges and
+  recovered the missing ADR 0005 link on its own.
+
 ## Reflection
 
 To be completed at submission, with an honest AI / human ratio.
