@@ -8,47 +8,104 @@
   :root {
     color-scheme: light;
     --surface: #fcfcfb;
+    --plane: #f9f9f7;
     --surface-2: #f3f2ee;
-    --border: #e6e5e0;
+    --border: rgba(11, 11, 11, 0.10);
+    --rule: #e1e0d9;
     --text-primary: #0b0b0b;
     --text-secondary: #52514e;
-    --text-muted: #77766f;
+    --text-muted: #898781;
     --accent: #2a78d6;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; background: var(--surface); color: var(--text-primary);
+    margin: 0; background: var(--plane); color: var(--text-primary);
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
-  main { max-width: 72rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
-  header h1 { margin: 0; font-size: 1.9rem; letter-spacing: -0.01em; }
-  .meta { color: var(--text-secondary); margin: 0.35rem 0 0; }
-  nav { margin: 1.25rem 0 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
-  nav a { color: var(--accent); text-decoration: none; font-size: 0.93rem; }
-  section { margin-top: 3rem; }
-  h2 { font-size: 1.35rem; margin: 0 0 0.25rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
-  h3 { font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
-  p.note { color: var(--text-secondary); margin: 0.4rem 0 0.9rem; max-width: 52rem; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 0.75rem; margin-top: 1.5rem; }
-  .tile { background: var(--surface-2); border-radius: 8px; padding: 0.85rem 1rem; }
-  .tile .label { color: var(--text-secondary); font-size: 0.85rem; }
-  .tile .value { font-size: 1.45rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .tile .sub { color: var(--text-muted); font-size: 0.8rem; }
+  main { max-width: 76rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  header h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.01em; }
+  .meta { color: var(--text-secondary); margin: 0.3rem 0 0; font-size: 0.92rem; }
+
+  /* --- Masthead: the numbers that stay on screen whichever tab is open. --- */
+  .masthead {
+    margin-top: 1.5rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem 1.6rem;
+  }
+  .headline { display: flex; flex-wrap: wrap; gap: 2rem 3rem; align-items: flex-start; }
+  .hero { flex: 0 1 auto; }
+  .hero .label { color: var(--text-secondary); font-size: 0.9rem; }
+  .hero .figure { font-size: 3rem; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; }
+  .hero .sub { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.15rem; }
+  .stats { display: flex; flex: 1 1 26rem; flex-wrap: wrap; justify-content: space-between; gap: 1.75rem 2rem; }
+  .stat .label { color: var(--text-secondary); font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+  .stat .value { font-size: 1.5rem; font-weight: 600; line-height: 1.2; }
+  .stat .sub { color: var(--text-muted); font-size: 0.8rem; }
+
+  /* --- Data-quality strip: status is a dot plus a word, never colour alone. --- */
+  .quality-strip { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--rule); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 0.45rem; background: var(--surface-2);
+    border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.88rem;
+  }
+  .chip .n { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chip .dot, .badge .dot, .stat .dot {
+    width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: none; align-self: center;
+  }
+  .good .dot { background: var(--good); }
+  .warning .dot { background: var(--warning); }
+  .critical .dot { background: var(--critical); }
+  .reconcile { color: var(--text-secondary); font-size: 0.87rem; margin: 0.7rem 0 0; }
+  .reconcile b { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-primary); }
+
+  /* --- Tabs. Panels render open when scripting is off; JS then hides all but one. --- */
+  .tabs { display: none; gap: 0.25rem; margin: 1.75rem 0 0; border-bottom: 1px solid var(--rule); }
+  body.js-tabs .tabs { display: flex; flex-wrap: wrap; }
+  .tabs button {
+    appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; padding: 0.6rem 0.9rem; font: inherit; font-size: 0.95rem;
+    color: var(--text-secondary); cursor: pointer; border-radius: 6px 6px 0 0;
+  }
+  .tabs button:hover { background: var(--surface-2); color: var(--text-primary); }
+  .tabs button[aria-selected="true"] { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--accent); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .panel { margin-top: 2rem; }
+  .panel > h2:first-child { margin-top: 0; }
+  section.sub { margin-top: 2.75rem; }
+  h2 { font-size: 1.3rem; margin: 0 0 0.3rem; }
+  h3 { font-size: 1.02rem; margin: 1.6rem 0 0.5rem; }
+  p.note { color: var(--text-secondary); margin: 0.4rem 0 0.9rem; max-width: 54rem; font-size: 0.93rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.4rem; margin-top: 1rem; }
   .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1.5rem; }
   .pair > div { min-width: 0; }
   .scroll { overflow-x: auto; }
+
   table.data { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.9rem; width: 100%; }
   table.data th { font-weight: 600; color: var(--text-secondary); padding: 0.4rem 0.65rem; border-bottom: 1px solid var(--text-muted); white-space: nowrap; vertical-align: bottom; }
-  table.data td { padding: 0.35rem 0.65rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.data td { padding: 0.35rem 0.65rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  table.data tbody tr:hover { background: var(--surface-2); }
   table.data .num { text-align: right; white-space: nowrap; }
   table.data .text, table.data .text-long { text-align: left; }
   table.data td.text-long { min-width: 22rem; color: var(--text-secondary); }
-  .empty { background: var(--surface-2); border-radius: 8px; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-  ul.assumptions li { margin: 0.3rem 0; color: var(--text-secondary); }
+  .badge { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+
+  .empty { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+  ul.assumptions { margin: 0; padding-left: 1.1rem; }
+  ul.assumptions li { margin: 0.45rem 0; color: var(--text-secondary); max-width: 54rem; }
   code { font-size: 0.88em; background: var(--surface-2); padding: 0.05rem 0.3rem; border-radius: 4px; }
+
   @media print {
-    nav { display: none; }
-    section { break-inside: avoid-page; }
+    body { background: #fff; }
+    .tabs { display: none !important; }
+    .panel[hidden] { display: block !important; }
+    .panel { break-before: page; }
+    .panel:first-of-type { break-before: auto; }
+    .card, .masthead { break-inside: avoid; }
   }
 </style>
 {% if plotly_script %}<script>{{ plotly_script | safe }}</script>{% endif %}
@@ -59,74 +116,111 @@
   <h1>Retail Analytics Report</h1>
   <p class="meta">{{ report.selection }}</p>
   <p class="meta">Generated {{ report.generated_at.strftime("%Y-%m-%d %H:%M") }} · All amounts in TRY · Revenue after discount</p>
-  <nav>
-    <a href="#overview">Overview</a>
-    {% if report.has_sales %}<a href="#stores">Stores</a><a href="#categories">Categories</a><a href="#trend">Trend</a><a href="#articles">Articles</a>{% endif %}
-    <a href="#inventory">Inventory</a>
-    <a href="#quality">Data quality</a>
-    <a href="#assumptions">Assumptions</a>
-  </nav>
 </header>
 
-<section id="overview">
+<div class="masthead">
 {% if report.has_sales %}
   {% set s = report.kpis["summary"].iloc[0] %}
   {% set r = report.kpis["possible_returns"].iloc[0] %}
-  <div class="tiles">
-    <div class="tile"><div class="label">Revenue</div><div class="value">{{ money(s.revenue) }}</div><div class="sub">TRY after discount</div></div>
-    <div class="tile"><div class="label">Gross margin</div><div class="value">{{ percent(s.gross_margin_pct) }}</div><div class="sub">{{ money(s.gross_margin) }} TRY</div></div>
-    <div class="tile"><div class="label">Units sold</div><div class="value">{{ "{:,}".format(s.units | int) }}</div><div class="sub">{{ "{:,}".format(s.transactions | int) }} sale lines</div></div>
-    <div class="tile"><div class="label">Possible returns</div><div class="value">{{ money(r.value) }}</div><div class="sub">TRY · {{ r.transactions | int }} lines, excluded from revenue</div></div>
+  <div class="headline">
+    <div class="hero">
+      <div class="label">Revenue</div>
+      <div class="figure">{{ money(s.revenue) }}</div>
+      <div class="sub">TRY, after discount · {{ "{:,}".format(s.transactions | int) }} sale lines</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Gross margin</div>
+        <div class="value">{{ percent(s.gross_margin_pct) }}</div>
+        <div class="sub">{{ money(s.gross_margin) }} TRY</div>
+      </div>
+      <div class="stat">
+        <div class="label">Units sold</div>
+        <div class="value">{{ "{:,}".format(s.units | int) }}</div>
+        <div class="sub">across {{ report.kpis["sales_by_store"] | length }} store{{ "s" if report.kpis["sales_by_store"] | length != 1 }}</div>
+      </div>
+      <div class="stat warning">
+        <div class="label"><span class="dot"></span>Possible returns</div>
+        <div class="value">{{ money(r.value) }}</div>
+        <div class="sub">TRY · {{ r.transactions | int }} lines, excluded from revenue</div>
+      </div>
+    </div>
   </div>
 {% else %}
-  <div class="empty">
-    <strong>No sales match this selection.</strong>
-    <p class="note">Check the store, region and date filters. Inventory and data quality results below still apply.</p>
+  <div class="hero">
+    <div class="label">Revenue</div>
+    <div class="figure">—</div>
+    <div class="sub"><strong>No sales match this selection.</strong> Check the store, region and date filters.</div>
   </div>
 {% endif %}
-</section>
+
+  <div class="quality-strip">
+    <div class="chips">
+      <span class="chip good"><span class="dot"></span><span class="n">{{ "{:,}".format(quality.fixed) }}</span> values fixed</span>
+      <span class="chip warning"><span class="dot"></span><span class="n">{{ "{:,}".format(quality.flagged) }}</span> rows flagged for review</span>
+      <span class="chip critical"><span class="dot"></span><span class="n">{{ "{:,}".format(quality.raw - quality.clean) }}</span> rows quarantined</span>
+    </div>
+    <p class="reconcile">
+      Every row is accounted for: <b>{{ "{:,}".format(quality.raw) }}</b> raw =
+      <b>{{ "{:,}".format(quality.clean) }}</b> clean + <b>{{ "{:,}".format(quality.raw - quality.clean) }}</b> quarantined.
+      Validation runs on the full files before any filter, so this is the same for every selection.
+    </p>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Report sections">
+  {% if report.has_sales %}
+  <button type="button" role="tab" id="tab-sales" aria-controls="sales" aria-selected="true">Sales</button>
+  <button type="button" role="tab" id="tab-articles" aria-controls="articles" aria-selected="false">Articles</button>
+  {% endif %}
+  <button type="button" role="tab" id="tab-inventory" aria-controls="inventory" aria-selected="false">Inventory</button>
+  <button type="button" role="tab" id="tab-quality" aria-controls="quality" aria-selected="false">Data quality</button>
+  <button type="button" role="tab" id="tab-assumptions" aria-controls="assumptions" aria-selected="false">Assumptions</button>
+</nav>
 
 {% if report.has_sales %}
-<section id="stores">
-  <h2>Revenue and margin by store</h2>
-  <div class="pair">
-    <div><h3>Revenue (TRY)</h3>{{ charts.revenue_by_store | safe }}</div>
-    <div><h3>Gross margin %</h3>{{ charts.margin_by_store | safe }}</div>
-  </div>
-  <div class="scroll">{{ table(report.kpis["sales_by_store"], ["store_name", "region", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
-</section>
-
-<section id="categories">
-  <h2>Revenue and margin by category</h2>
-  <div class="pair">
-    <div><h3>Revenue (TRY)</h3>{{ charts.revenue_by_category | safe }}</div>
-    <div><h3>Gross margin %</h3>{{ charts.margin_by_category | safe }}</div>
-  </div>
-  <div class="scroll">{{ table(report.kpis["sales_by_category"], ["category", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
-</section>
-
-<section id="trend">
+<div class="panel" id="sales" role="tabpanel" aria-labelledby="tab-sales" tabindex="0">
   <h2>Revenue over time</h2>
-  <h3>Daily revenue (TRY)</h3>
-  {{ charts.revenue_by_day | safe }}
+  <p class="note">Daily revenue across the selected period.</p>
+  <div class="card">{{ charts.revenue_by_day | safe }}</div>
   <div class="pair">
     <div><h3>By week (Monday to Sunday)</h3><p class="note">The first and last weeks can be partial: the data starts and ends mid-week.</p><div class="scroll">{{ table(report.kpis["sales_by_week"], ["week", "units", "revenue", "gross_margin_pct"]) | safe }}</div></div>
     <div><h3>By month</h3><div class="scroll">{{ table(report.kpis["sales_by_month"], ["month", "units", "revenue", "gross_margin", "gross_margin_pct"]) | safe }}</div></div>
   </div>
-</section>
 
-<section id="articles">
+  <section class="sub">
+    <h2>Revenue and margin by store</h2>
+    <div class="pair">
+      <div><h3>Revenue (TRY)</h3>{{ charts.revenue_by_store | safe }}</div>
+      <div><h3>Gross margin %</h3>{{ charts.margin_by_store | safe }}</div>
+    </div>
+    <div class="scroll">{{ table(report.kpis["sales_by_store"], ["store_name", "region", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
+  </section>
+
+  <section class="sub">
+    <h2>Revenue and margin by category</h2>
+    <div class="pair">
+      <div><h3>Revenue (TRY)</h3>{{ charts.revenue_by_category | safe }}</div>
+      <div><h3>Gross margin %</h3>{{ charts.margin_by_category | safe }}</div>
+    </div>
+    <div class="scroll">{{ table(report.kpis["sales_by_category"], ["category", "transactions", "units", "revenue", "cost", "gross_margin", "gross_margin_pct"]) | safe }}</div>
+  </section>
+</div>
+
+<div class="panel" id="articles" role="tabpanel" aria-labelledby="tab-articles" tabindex="0" hidden>
   <h2>Top and bottom {{ report.top_n }} articles</h2>
   <p class="note">Margin % lists include only articles with at least {{ report.min_units_for_margin_pct }} units sold, so a handful of sales cannot dominate them.</p>
   {% set article_columns = ["rank", "article_id", "article_name", "category", "units", "revenue", "gross_margin", "gross_margin_pct"] %}
   {% for measure, title in [("revenue", "revenue"), ("margin_try", "gross margin (TRY)"), ("margin_pct", "gross margin %")] %}
-  <h3>Top by {{ title }}</h3><div class="scroll">{{ table(report.kpis["top_by_" ~ measure], article_columns) | safe }}</div>
-  <h3>Bottom by {{ title }}</h3><div class="scroll">{{ table(report.kpis["bottom_by_" ~ measure], article_columns) | safe }}</div>
+  <section class="sub">
+    <h3>Top by {{ title }}</h3><div class="scroll">{{ table(report.kpis["top_by_" ~ measure], article_columns) | safe }}</div>
+    <h3>Bottom by {{ title }}</h3><div class="scroll">{{ table(report.kpis["bottom_by_" ~ measure], article_columns) | safe }}</div>
+  </section>
   {% endfor %}
-</section>
+</div>
 {% endif %}
 
-<section id="inventory">
+<div class="panel" id="inventory" role="tabpanel" aria-labelledby="tab-inventory" tabindex="0"{% if report.has_sales %} hidden{% endif %}>
   <h2>Inventory turnover</h2>
   {% set turnover = report.kpis["inventory_turnover_by_store"] %}
   {% if turnover.empty %}
@@ -139,34 +233,40 @@
     Only inventory weeks lying entirely inside the date range are used. The inventory file samples different
     articles each week, so turnover describes the sampled articles.
   </p>
-  {% if charts.turnover_by_store %}{{ charts.turnover_by_store | safe }}{% endif %}
+  {% if charts.turnover_by_store %}<div class="card">{{ charts.turnover_by_store | safe }}</div>{% endif %}
   <div class="scroll">{{ table(turnover, ["store_name", "region", "weeks", "cogs", "avg_inventory_value", "turnover"]) | safe }}</div>
 
-  <h3>Sales in the inventory file vs transactions</h3>
-  <p class="note">
-    Units sold according to the inventory file, compared with units in the transactions for the same
-    store, article and week. The two files do not reconcile, which is why turnover uses the inventory file alone.
-  </p>
-  <div class="scroll">{{ table(report.kpis["sales_vs_inventory"]) | safe }}</div>
+  <section class="sub">
+    <h3>Sales in the inventory file vs transactions</h3>
+    <p class="note">
+      Units sold according to the inventory file, compared with units in the transactions for the same
+      store, article and week. The two files do not reconcile, which is why turnover uses the inventory file alone.
+    </p>
+    <div class="scroll">{{ table(report.kpis["sales_vs_inventory"]) | safe }}</div>
+  </section>
   {% endif %}
-</section>
+</div>
 
-<section id="quality">
+<div class="panel" id="quality" role="tabpanel" aria-labelledby="tab-quality" tabindex="0" hidden>
   <h2>Data quality</h2>
   <p class="note">
-    Validation runs on the full input files before any filter, so this section is the same for every selection.
-    Every row is accounted for: raw = clean + quarantined. Quarantined rows are in <code>quarantine/</code> and
-    flagged rows in <code>issues/</code>, each with a reason.
+    Every rule has one of three severities. <strong>Fix</strong> corrects a value in place when the correction is
+    provable; <strong>flag</strong> keeps a suspicious row and records it; <strong>reject</strong> moves an unusable
+    row to quarantine with a reason. Quarantined rows are in <code>quarantine/</code> and flagged rows in
+    <code>issues/</code>.
   </p>
+
   <h3>Rows processed</h3>
   <div class="scroll">{{ table(report.row_counts) | safe }}</div>
+
   <h3>What the checks found</h3>
   <div class="scroll">{{ table(findings, ["rule_id", "severity", "fixed", "rejected", "flagged", "description"]) | safe }}</div>
   <p class="note">{{ quiet_checks }} further checks ran and found nothing; see <code>data_quality.csv</code> for all of them.</p>
-</section>
+</div>
 
-<section id="assumptions">
+<div class="panel" id="assumptions" role="tabpanel" aria-labelledby="tab-assumptions" tabindex="0" hidden>
   <h2>Assumptions</h2>
+  <p class="note">Each one changes a number in this report, so they are stated rather than buried.</p>
   <ul class="assumptions">
     <li>Prices in KRS (kuruş) are converted to TRY at 100 KRS = 1 TRY.</li>
     <li>Cost uses each article's current purchase price; the data has no cost history.</li>
@@ -175,15 +275,61 @@
     <li>Sales at stores missing from the store list are excluded.</li>
     <li>Regions are those in the store file (e.g. Marmara), not the North/South/East/West/Central listed in the brief.</li>
   </ul>
-</section>
+</div>
 </main>
-{% if plotly_script %}
 <script>
-  // Charts are drawn while the page is still laying out; size them to their final columns.
-  window.addEventListener("load", () => {
-    document.querySelectorAll(".js-plotly-plot").forEach((chart) => Plotly.Plots.resize(chart));
+(function () {
+  var list = document.querySelector('[role="tablist"]');
+  if (!list) { return; }
+  var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+  if (!tabs.length) { return; }
+  var panels = tabs.map(function (tab) { return document.getElementById(tab.getAttribute('aria-controls')); });
+  document.body.classList.add('js-tabs');
+
+  function show(index, moveFocus) {
+    tabs.forEach(function (tab, i) {
+      var selected = i === index;
+      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+      tab.tabIndex = selected ? 0 : -1;
+      if (panels[i]) { panels[i].hidden = !selected; }
+    });
+    if (moveFocus) { tabs[index].focus(); }
+    // Plotly lays a chart out at its container's width; a chart drawn in a hidden
+    // panel has none, so size it when its panel first becomes visible.
+    if (window.Plotly && panels[index]) {
+      panels[index].querySelectorAll('.js-plotly-plot').forEach(function (chart) {
+        Plotly.Plots.resize(chart);
+      });
+    }
+  }
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener('click', function () {
+      show(i, false);
+      if (window.history && history.replaceState) {
+        history.replaceState(null, '', '#' + tab.getAttribute('aria-controls'));
+      }
+    });
+    tab.addEventListener('keydown', function (event) {
+      var next = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: tabs.length - 1 }[event.key];
+      if (next === undefined) { return; }
+      event.preventDefault();
+      show((next + tabs.length) % tabs.length, true);
+    });
   });
+
+  var wanted = tabs.findIndex(function (tab) {
+    return '#' + tab.getAttribute('aria-controls') === window.location.hash;
+  });
+  show(wanted > -1 ? wanted : 0, false);
+
+  window.addEventListener('beforeprint', function () {
+    panels.forEach(function (panel) { if (panel) { panel.hidden = false; } });
+    if (window.Plotly) {
+      document.querySelectorAll('.js-plotly-plot').forEach(function (chart) { Plotly.Plots.resize(chart); });
+    }
+  });
+})();
 </script>
-{% endif %}
 </body>
 </html>

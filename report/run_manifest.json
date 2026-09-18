@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-09-17T19:50:21",
+  "started_at": "2026-09-18T11:28:40",
   "settings": {
     "data_dir": "data",
     "output_dir": "report",
@@ -7,7 +7,7 @@
     "regions": [],
     "date_from": null,
     "date_to": null,
-    "as_of": "2026-09-17",
+    "as_of": "2026-09-18",
     "price_tolerance": 0.5,
     "top_n": 10,
     "min_units_for_margin_pct": 20

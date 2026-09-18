@@ -122,6 +122,29 @@ Kept up to date at each milestone rather than written at the end.
   document pass with the tightened prompt produced zero `AMBIGUOUS` edges and
   recovered the missing ADR 0005 link on its own.
 
+### 7. Report hierarchy and tabs
+
+- I asked for a less flat report: the good KPIs and the problem data emphasised, and
+  the sections tabbed. Recorded as [ADR 0007](docs/adr/0007-report-hierarchy-and-tabs.md).
+- Reviewed in a real browser with Playwright rather than by reading the markup, which
+  is how the checks below were confirmed: five tabs reachable by arrow key, every panel
+  visible under print media, no horizontal scroll at a 390px viewport, no console
+  errors. Page height for the first screen fell from 8,022px to 2,542px.
+- **AI errors caught:**
+  - The first pass gave the "possible returns" status dot no size rule, so it rendered
+    as nothing. Found in the screenshot, not the code.
+  - Plotly sizes a chart to its container, so the charts inside tabs that start hidden
+    drew at zero width. They are resized when their tab is first opened, and on
+    `beforeprint`.
+  - The previous stat tiles set `font-variant-numeric: tabular-nums` on the large
+    values, which makes display-size numbers look loose; that belongs on table columns
+    only, and was removed from the headline figures.
+- **Left alone deliberately:** the gross-margin-% bars are five near-identical lengths
+  (17.2–18.2% on a 0–20% axis), so the chart carries no information the table doesn't.
+  The honest fix is a dot plot, which the zero-baseline bar rule in the chart method
+  does not cover; raised rather than changed, because the chart method is a settled
+  decision.
+
 ## Reflection
 
 To be completed at submission, with an honest AI / human ratio.

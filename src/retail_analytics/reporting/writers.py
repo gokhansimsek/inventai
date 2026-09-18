@@ -102,6 +102,7 @@ class HtmlWriter:
             percent=_percent,
             findings=_findings(report.data_quality),
             turnover_period=_turnover_period(report.turnover_weeks),
+            quality=_quality_summary(report),
             quiet_checks=int(
                 (report.data_quality[["fixed", "rejected", "flagged"]].sum(axis=1) == 0).sum()
             ),
@@ -174,6 +175,45 @@ def _turnover_period(weeks: list[pd.Timestamp]) -> str:
     return f"{weeks[0]:%Y-%m-%d} to {last_day:%Y-%m-%d}"
 
 
+def _quality_summary(report: Report) -> dict[str, int]:
+    """Total what validation did, for the data-quality tiles and the reconciliation line.
+
+    Args:
+        report (Report): The report content, with per-rule counts and per-table row counts.
+
+    Returns:
+        dict[str, int]: Totals keyed ``fixed``, ``rejected``, ``flagged``, ``raw`` and
+            ``clean``, summed across every rule and every table.
+    """
+    counts = report.data_quality[["fixed", "rejected", "flagged"]].sum()
+    return {
+        "fixed": int(counts["fixed"]),
+        "rejected": int(counts["rejected"]),
+        "flagged": int(counts["flagged"]),
+        "raw": int(report.row_counts["raw"].sum()),
+        "clean": int(report.row_counts["clean"].sum()),
+    }
+
+
+SEVERITY_STATUS = {"fix": "good", "flag": "warning", "reject": "critical"}
+
+
+def _severity_badge(severity: str) -> str:
+    """Render a severity as a status dot beside its name.
+
+    The dot carries the status color and the word carries the meaning, so severity is
+    never encoded by color alone.
+
+    Args:
+        severity (str): Rule severity, one of ``fix``, ``flag`` or ``reject``.
+
+    Returns:
+        str: HTML markup for the badge, with the severity text escaped.
+    """
+    status = SEVERITY_STATUS.get(severity, "warning")
+    return f'<span class="badge {status}"><span class="dot"></span>{escape(severity)}</span>'
+
+
 def _findings(data_quality: pd.DataFrame) -> pd.DataFrame:
     """Keep the rules that changed, removed or flagged at least one row.
 
@@ -226,16 +266,33 @@ def _table(frame: pd.DataFrame, columns: list[str] | None = None) -> str:
         for c, css in zip(shown.columns, classes, strict=True)
     )
     formatters = [_formatter(shown[column]) for column in shown.columns]
+    names = list(shown.columns)
     body = "".join(
         "<tr>"
         + "".join(
-            f'<td class="{css}">{escape(fmt(value))}</td>'
-            for value, fmt, css in zip(row, formatters, classes, strict=True)
+            f'<td class="{css}">{_cell_html(name, value, fmt)}</td>'
+            for name, value, fmt, css in zip(names, row, formatters, classes, strict=True)
         )
         + "</tr>"
         for row in shown.itertuples(index=False)
     )
     return f'<table class="data"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>'
+
+
+def _cell_html(column: str, value: object, formatter: Callable[[object], str]) -> str:
+    """Render one cell, as a status badge for severity and as escaped text otherwise.
+
+    Args:
+        column (str): Column name, used to pick the badge treatment.
+        value (object): The cell's value.
+        formatter (Callable[[object], str]): Formatter for this column's values.
+
+    Returns:
+        str: HTML for the cell's contents, with any text escaped.
+    """
+    if column == "severity":
+        return _severity_badge(str(value))
+    return escape(formatter(value))
 
 
 TEXT_COLUMNS = {
