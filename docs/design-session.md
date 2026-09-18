@@ -20,17 +20,17 @@ empty. Fact-finding is the agent's job; decisions are the user's.
 Probed directly from `data/` before Round 1, so no question below asks the user
 for something lookup-able.
 
-| Finding | Detail |
-|---|---|
-| `KRS` currency | 4,345 rows (15%). Median 49,582 vs TRY's 501 — **exactly 100x**. It is kurus. |
-| Mixed date formats | 27,482 ISO + 1,408 `DD-MM-YYYY`. 838 of those have first part >12, and none have second part >12 — **unambiguously DD-MM**. |
-| Future dates | 15 rows dated Jan–Feb **2027**, against a Mar-2024 dataset. |
-| Duplicate `transaction_id` | 143 ids, and the rows are **byte-identical copies**. |
-| Non-positive `quantity` | 577 rows with qty <= 0. |
-| Missing `customer_id` | 569 rows (brief says walk-ins — likely legitimate, not a defect). |
-| Referential integrity | Zero orphan `article_id`s in transactions. |
-| Discount range | 0.0 to 40.0 pct. |
-| Row counts | transactions 28,890 · inventory 1,326 · articles 200 · stores 5. |
+| Finding                    | Detail                                                                                                                      |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `KRS` currency             | 4,345 rows (15%). Median 49,582 vs TRY's 501 — **exactly 100x**. It is kurus.                                               |
+| Mixed date formats         | 27,482 ISO + 1,408 `DD-MM-YYYY`. 838 of those have first part >12, and none have second part >12 — **unambiguously DD-MM**. |
+| Future dates               | 15 rows dated Jan–Feb **2027**, against a Mar-2024 dataset.                                                                 |
+| Duplicate `transaction_id` | 143 ids, and the rows are **byte-identical copies**.                                                                        |
+| Non-positive `quantity`    | 577 rows with qty <= 0.                                                                                                     |
+| Missing `customer_id`      | 569 rows (brief says walk-ins — likely legitimate, not a defect).                                                           |
+| Referential integrity      | Zero orphan `article_id`s in transactions.                                                                                  |
+| Discount range             | 0.0 to 40.0 pct.                                                                                                            |
+| Row counts                 | transactions 28,890 · inventory 1,326 · articles 200 · stores 5.                                                            |
 
 Reproduce commands: see git history / rerun with `awk` over `data/*.csv`.
 
@@ -38,7 +38,7 @@ Reproduce commands: see git history / rerun with `awk` over `data/*.csv`.
 
 ## Answers log
 
-- **Q1 → (a) + (b) weighted equally.** User has **3 days** (not 4–6h); goal is
+- **Q1 → (a) + (b) weighted equally.** User has 4–6h; goal is
   the best submission possible. Guard: architecture must stay proportionate so
   "Pragmatism" doesn't suffer.
 - **Q2 → pandas + pandera.**
@@ -51,24 +51,24 @@ Reproduce commands: see git history / rerun with `awk` over `data/*.csv`.
 
 ## Facts found in second probe (2026-09-17)
 
-| Finding | Detail |
-|---|---|
-| Orphan store `S-099` | 116 transactions reference a store not in `stores.csv` (resume file's "zero orphans" only checked articles). |
-| `S-004` opening_date `2027-03-15` | Future date, yet it has 7,534 transactions (26%) in Mar 2024. |
-| Region values | Real values are Turkish regions (Marmara, Aegean, Central Anatolia, Mediterranean) — brief's "North/South/..." is wrong. |
-| Missing customer_id tokens | `''` 569 · `N/A` 594 · `NULL` 573 · `NA` 563 = **2,299** (earlier 569 counted only blanks). |
-| Negative quantity | 577 rows, all -1..-5; no zero qty. Max qty 5 — no qty outliers. |
-| Selling price vs RSP | Price (after KRS fix) always 0.95–1.05x RSP — no price outliers. |
-| Articles cost > RSP | 4 articles. 2,810 transactions sell below cost after discount. |
-| Inventory balance | 28 rows where opening + received - sold != closing (off by ±1..10). No nulls, negatives, dup keys or orphans. |
-| Inventory snapshots | Mondays 03-04, 03-11, 03-18, 03-25. Sales run 03-01..03-31; 3,006 sales before first snapshot. |
-| Inventory vs sales | Inventory covers 497 store-article pairs; sales cover 1,038. Weekly `sold_qty` does **not** reconcile with transactions (ratio median 1.26, range 0–50). The files are independent. |
-| Clean date range | 28,875 rows in 2024-03-01..31; 15 rows in 2027. |
+| Finding                           | Detail                                                                                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Orphan store `S-099`              | 116 transactions reference a store not in `stores.csv` (resume file's "zero orphans" only checked articles).                                                                        |
+| `S-004` opening_date `2027-03-15` | Future date, yet it has 7,534 transactions (26%) in Mar 2024.                                                                                                                       |
+| Region values                     | Real values are Turkish regions (Marmara, Aegean, Central Anatolia, Mediterranean) — brief's "North/South/..." is wrong.                                                            |
+| Missing customer_id tokens        | `''` 569 · `N/A` 594 · `NULL` 573 · `NA` 563 = **2,299** (earlier 569 counted only blanks).                                                                                         |
+| Negative quantity                 | 577 rows, all -1..-5; no zero qty. Max qty 5 — no qty outliers.                                                                                                                     |
+| Selling price vs RSP              | Price (after KRS fix) always 0.95–1.05x RSP — no price outliers.                                                                                                                    |
+| Articles cost > RSP               | 4 articles. 2,810 transactions sell below cost after discount.                                                                                                                      |
+| Inventory balance                 | 28 rows where opening + received - sold != closing (off by ±1..10). No nulls, negatives, dup keys or orphans.                                                                       |
+| Inventory snapshots               | Mondays 03-04, 03-11, 03-18, 03-25. Sales run 03-01..03-31; 3,006 sales before first snapshot.                                                                                      |
+| Inventory vs sales                | Inventory covers 497 store-article pairs; sales cover 1,038. Weekly `sold_qty` does **not** reconcile with transactions (ratio median 1.26, range 0–50). The files are independent. |
+| Clean date range                  | 28,875 rows in 2024-03-01..31; 15 rows in 2027.                                                                                                                                     |
 
 ## Round 2 answers
 
 - **Q6 → (c)** running `AI_USAGE.md`, small commits, keep this session file in repo as design record.
-- **Q7 → (b)** two severities: *reject* (→ per-file quarantine, cascades to children) vs *flag* (row kept, logged to per-file issues table). S-004 opening date, inventory imbalance, below-cost articles = flag.
+- **Q7 → (b)** two severities: _reject_ (→ per-file quarantine, cascades to children) vs _flag_ (row kept, logged to per-file issues table). S-004 opening date, inventory imbalance, below-cost articles = flag.
 - **Q8 → (c)** reject negative qty; report "possible returns" count + value.
 - **Q9 → (a) but user does NOT want the 15 rows lost** — find a logical way to process them. Follow-up in Round 3 (Q15).
 - **Q10 → accepted**: revenue = qty × TRY price × (1−disc); cost = qty × current purchase_price; margin % plus margin TRY; below-cost sales kept and surfaced as insight.
@@ -79,12 +79,12 @@ Reproduce commands: see git history / rerun with `awk` over `data/*.csv`.
 
 ## Facts found in third probe
 
-| Finding | Detail |
-|---|---|
-| 2027 rows | IDs `TXN-128733..128747` — contiguous, immediately after the last valid id `128732`. Only 3 dates (2027-01-15, 01-22, 02-01). All `Sunny`, all discount 0 (vs 17% / 70% base rates) — looks injected. |
-| ID ↔ date | Across all 28,875 valid rows, `transaction_id` order is **strictly monotonic with date** (100001 = 03-01 … 128732 = 03-31). |
-| Article coverage | All 200 articles have sales (min 21 lines) — bottom-10 never hits zero-sale articles. |
-| Env | `uv 0.9.12` installed; Pythons 3.14.5 (default), 3.13.9, 3.12. |
+| Finding          | Detail                                                                                                                                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2027 rows        | IDs `TXN-128733..128747` — contiguous, immediately after the last valid id `128732`. Only 3 dates (2027-01-15, 01-22, 02-01). All `Sunny`, all discount 0 (vs 17% / 70% base rates) — looks injected. |
+| ID ↔ date        | Across all 28,875 valid rows, `transaction_id` order is **strictly monotonic with date** (100001 = 03-01 … 128732 = 03-31).                                                                           |
+| Article coverage | All 200 articles have sales (min 21 lines) — bottom-10 never hits zero-sale articles.                                                                                                                 |
+| Env              | `uv 0.9.12` installed; Pythons 3.14.5 (default), 3.13.9, 3.12.                                                                                                                                        |
 
 ## Round 3 answers
 
@@ -186,15 +186,15 @@ inheritance, no profiles, no env-var layer.
 
 Each of these has an unsettled prerequisite in Round 1.
 
-| Question | Blocked on |
-|---|---|
-| Inventory turnover formula — only 4 weekly snapshots and 1 month of sales; what is "average inventory", and does COGS come from `sold_qty` or from transactions? | Q1, Q3 |
-| Gross margin denominator — revenue after discount vs gross revenue; and what happens when `purchase_price > selling_price`. | Q3 |
-| Whether the 2027-dated rows are quarantined or clamped, and whether the configurable date range silently hides them. | Q3, Q5 |
-| Test strategy and depth — which computations get unit tests, whether validation rules get table-driven tests. | Q1, Q2 |
-| AI Usage Log strategy — the brief explicitly requires declaring AI use, including the AI/human ratio. Depends on how much of the build is delegated. | Q1 |
-| Module boundaries and package layout. | Q1, Q2, Q3 |
-| Logging approach — stdlib `logging` config, structured vs plain, and what the quality layer emits. | Q2, Q3 |
+| Question                                                                                                                                                         | Blocked on |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Inventory turnover formula — only 4 weekly snapshots and 1 month of sales; what is "average inventory", and does COGS come from `sold_qty` or from transactions? | Q1, Q3     |
+| Gross margin denominator — revenue after discount vs gross revenue; and what happens when `purchase_price > selling_price`.                                      | Q3         |
+| Whether the 2027-dated rows are quarantined or clamped, and whether the configurable date range silently hides them.                                             | Q3, Q5     |
+| Test strategy and depth — which computations get unit tests, whether validation rules get table-driven tests.                                                    | Q1, Q2     |
+| AI Usage Log strategy — the brief explicitly requires declaring AI use, including the AI/human ratio. Depends on how much of the build is delegated.             | Q1         |
+| Module boundaries and package layout.                                                                                                                            | Q1, Q2, Q3 |
+| Logging approach — stdlib `logging` config, structured vs plain, and what the quality layer emits.                                                               | Q2, Q3     |
 
 ---
 
