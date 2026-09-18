@@ -12,3 +12,4 @@ what it costs. The full design discussion is in [../design-session.md](../design
 | [0005](0005-date-future-transactions-from-id-order.md) | Future-dated transactions are dated from transaction id order |
 | [0006](0006-report-model-and-writers.md) | One report model, rendered by HTML and CSV writers |
 | [0007](0007-report-hierarchy-and-tabs.md) | The report leads with a persistent masthead and splits its sections into tabs |
+| [0008](0008-in-report-filtering.md) | The report filters itself from pre-aggregated facts; no KPI formula is restated in the page |

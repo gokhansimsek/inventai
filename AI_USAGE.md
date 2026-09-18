@@ -145,6 +145,41 @@ Kept up to date at each milestone rather than written at the end.
   does not cover; raised rather than changed, because the chart method is a settled
   decision.
 
+### 8. Filtering inside the report
+
+- I asked for store, region and date-range selection in the report itself, rather than
+  only as CLI flags. That changes Q5 and [ADR 0006](docs/adr/0006-report-model-and-writers.md),
+  so the AI raised the conflict and measured the options before writing anything:
+  the fact cube is 10,789 rows and 0.3 MB, against a 4.7 MB file. Recorded as
+  [ADR 0008](docs/adr/0008-in-report-filtering.md).
+- **The risk I made it design around:** a second implementation of the analysis in
+  JavaScript could disagree with the tested Python. The answer was to keep every formula
+  in Python and give the page only pre-computed measures to sum, average and divide.
+  Revenue and cost are additive, margin % is a ratio of sums, and turnover is summed
+  COGS over mean weekly inventory value once the whole-week rule picks the weeks.
+- **How it is held:** `tests/test_report_filters.py` drives the real controls in a real
+  browser and compares the figures on screen with a standalone pandas script over
+  `data/` — not with the pipeline, so the test can disagree with both. Three independent
+  routes agree on all four selections. A test also asserts the data-quality totals do
+  **not** move with the selection, because validation runs before filtering.
+- I then asked for stores and regions as multi-select dropdowns rather than list boxes,
+  and for the Articles tab to show one ranking measure at a time, defaulting to revenue.
+- **AI errors caught:**
+  - Possible returns are computed from quarantined rows, which are not in the sales
+    cube, so that tile would have stayed frozen while everything else filtered. Caught
+    by reading the masthead against the fact tables, and fixed with a returns cube.
+  - Filtering to one store left the turnover chart 240px tall for a 104px bar: Plotly
+    updates its own layout height but not the inline height on the container it created.
+    Found by measuring the element in the browser, not from the screenshot.
+  - Rounding the cube's measures to 2 decimals rounded before summing, so the page
+    showed gross margin as 10,301,981 against the pipeline's 10,301,980. Spotted in a
+    screenshot, confirmed by summing at 2dp, 4dp and full precision, and fixed by not
+    rounding. The browser test had not covered gross margin in TRY; it does now, with
+    values from the independent script.
+  - Writing that test, the AI filled in three of the four expected margins from memory
+    rather than from the independent script. Two were wrong. They now come from the
+    script, like every other expected value in the suite.
+
 ## Reflection
 
 To be completed at submission, with an honest AI / human ratio.

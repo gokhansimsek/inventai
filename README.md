@@ -4,7 +4,9 @@ Validates, cleans and reports on one month of sales and inventory data for a
 five-store Turkish retail chain. The brief is in [case_study.md](case_study.md).
 
 **The report produced from the provided data is in [report/](report/):** open
-[report/report.html](report/report.html) in a browser (works offline).
+[report/report.html](report/report.html) in a browser (works offline). It filters
+itself — pick stores, a region and a date range at the top and every figure, table
+and chart re-aggregates without re-running the pipeline.
 
 ## What it does
 
@@ -13,7 +15,10 @@ five-store Turkish retail chain. The brief is in [case_study.md](case_study.md).
    is provable, *rejected* to a quarantine file when the row is unusable, or
    *flagged* for review while kept. Every row is accounted for:
    raw = clean + quarantined.
-3. **Filters** clean data by store, region and date range.
+3. **Filters** clean data by store, region and date range — on the command line for
+   the run, and again inside the report for the reader
+   ([ADR 0008](docs/adr/0008-in-report-filtering.md)). Validation always runs on the
+   full files first, so the data-quality figures never change with the selection.
 4. **Computes KPIs:** revenue and gross margin by store, category, month, week
    and day; top/bottom 10 articles by revenue, margin (TRY) and margin %;
    inventory turnover by store; a sales-vs-inventory comparison; possible returns.
@@ -120,6 +125,9 @@ uv run pytest
   from an independent pandas script, not from this code, so the tests can
   disagree with it.
 - **The CLI** is tested for filters, config overrides and error exits.
+- **The report's own filters** are driven in a headless browser (Playwright) and
+  compared with the same independent script, so the figures the page computes for a
+  selection cannot drift from the ones the pipeline would produce.
 
 ## Development
 
